@@ -16,6 +16,11 @@ requirements include the following.
    - Ability for buyers to purchase listed tokens on any NFT marketplace while having,
    - Ability to distribute royalties no matter where it was exchanged
 
+# Considerations
+
+ - Use ERC1155 instead of ERC721
+ - Use Enjin or Polygon instead of Ethereum
+
 #### Compatibility
 
 Solidity ^0.8.0
