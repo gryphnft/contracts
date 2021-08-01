@@ -36,6 +36,8 @@ contract ERC721PresetContractURI is ERC721, ERC721ContractURI {
   ERC721ContractURI(_uri)
   {}
 
+  //no methods or configuration needs to be added for this preset
+
   /**
    * @dev Basic mint and transfer
    */

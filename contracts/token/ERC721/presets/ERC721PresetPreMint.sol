@@ -18,4 +18,7 @@ contract ERC721PresetPreMint is ERC721PreMintable {
   ERC721(_name, _symbol)
   ERC721PreMintable(_recipients)
   {}
+
+  //no methods or configuration needs to be added for this preset
+  //minting is disabled for this preset
 }

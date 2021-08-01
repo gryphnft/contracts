@@ -22,11 +22,14 @@ contract ERC721PresetTransferFees is ERC721, ERC721TransferFees {
 
   Counters.Counter private _tokenIds;
 
-  //in this mock only the contract owner can add a fee
+  //in this preset only the contract owner can add a fee
   address owner;
 
   modifier onlyContractOwner {
-    require(msg.sender == owner, 'Restricted method access to only the contract owner');
+    require(
+      msg.sender == owner,
+      'Restricted method access to only the contract owner'
+    );
     _;
   }
 

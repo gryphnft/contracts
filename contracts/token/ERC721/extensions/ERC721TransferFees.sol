@@ -2,10 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-//abstract implementation of ERC721
-//used to store an item's metadata (ex. https://game.example/item-id-8u5h2m.json)
-//it already has IERC721Metadata and IERC721Enumerable, so no need to add it
-//usage: _setTokenURI(tokenId, tokenURI)
+//implementation of ERC721
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 abstract contract ERC721TransferFees is ERC721 {
@@ -29,7 +26,7 @@ abstract contract ERC721TransferFees is ERC721 {
     );
     require(
       (totalFees + fee) <= TOTAL_ALLOWABLE_FEES,
-      'Total fee should be more than 0'
+      'Exceeds total fees'
     );
 
     //if no recipient
@@ -56,7 +53,24 @@ abstract contract ERC721TransferFees is ERC721 {
    */
   function _removeFee(address recipient) internal {
     require(fees[recipient] != 0, 'Recipient has no fees');
+    //deduct total fees
     totalFees -= fees[recipient];
+    //remove fees from the map
     delete fees[recipient];
+    //Tricky logic to remove an element from an array...
+    //if there are at least 2 elements in the array,
+    if (_recipients.length > 1) {
+      //find the recipient
+      for (uint i = 0; i < _recipients.length; i++) {
+        if(_recipients[i] == recipient) {
+          //move the last element to the deleted element
+          _recipients[i] = _recipients[_recipients.length - 1];
+          break;
+        }
+      }
+    }
+
+    //either way remove the last element
+    _recipients.pop();
   }
 }

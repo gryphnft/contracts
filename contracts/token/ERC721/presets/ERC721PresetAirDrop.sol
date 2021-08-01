@@ -18,4 +18,7 @@ contract ERC721PresetAirDrop is ERC721AirDroppable {
   ERC721(_name, _symbol)
   ERC721AirDroppable(merkleroot)
   {}
+
+  //no methods or configuration needs to be added for this preset
+  //minting is disabled for this preset
 }

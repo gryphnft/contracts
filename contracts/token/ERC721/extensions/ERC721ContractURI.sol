@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-//abstract implementation of ERC721
+//implementation of ERC721
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 

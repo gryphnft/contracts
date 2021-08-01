@@ -29,7 +29,7 @@ contract ERC721PresetExchangable is ERC721, ERC721Exchangable {
     string memory _symbol
   ) ERC721(_name, _symbol) {}
 
-  //no methods or configuration needs to be added for this mock
+  //no methods or configuration needs to be added for this preset
 
   /**
    * @dev Basic mint and transfer

@@ -14,7 +14,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 //custom abstract implementation of ERC721
-//used to set secondary transfer fees
+//used to allow token owners to list their tokens for sale
 import "./../extensions/ERC721Listable.sol";
 
 contract ERC721PresetListable is ERC721, ERC721Listable {
@@ -30,7 +30,7 @@ contract ERC721PresetListable is ERC721, ERC721Listable {
     string memory _symbol
   ) ERC721(_name, _symbol) {}
 
-  //no methods or configuration needs to be added for this mock
+  //no methods or configuration needs to be added for this preset
 
   /**
    * @dev Basic mint and transfer

@@ -5,7 +5,6 @@ pragma solidity ^0.8.0;
 //custom abstract implementation of ERC721
 import "./ERC721Listable.sol";
 
-
 abstract contract ERC721Exchangable is ERC721Listable {
   /**
    * @dev Allows for a sender to avail of the offer price

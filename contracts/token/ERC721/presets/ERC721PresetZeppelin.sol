@@ -22,7 +22,6 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 //see: https://docs.openzeppelin.com/contracts/4.x/api/token/erc721#ERC721Burnable
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 
-
 contract ERC721PresetZeppelin is ERC721URIStorage, ERC721Burnable {
   using Counters for Counters.Counter;
 

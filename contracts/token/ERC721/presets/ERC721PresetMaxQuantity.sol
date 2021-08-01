@@ -19,6 +19,8 @@ contract ERC721PresetMaxQuantity is ERC721MaxQuantity {
   ERC721MaxQuantity(_maxQuantity)
   {}
 
+  //no methods or configuration needs to be added for this preset
+
   /**
    * @dev Mint and transfer considering max quantity
    */

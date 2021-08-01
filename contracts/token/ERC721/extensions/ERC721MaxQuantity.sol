@@ -2,10 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-//abstract implementation of ERC721
-//used to store an item's metadata (ex. https://game.example/item-id-8u5h2m.json)
-//it already has IERC721Metadata and IERC721Enumerable, so no need to add it
-//usage: _setTokenURI(tokenId, tokenURI)
+//implementation of ERC721
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 //A simple way to get a counter that can only be incremented or decremented.
@@ -21,12 +18,13 @@ abstract contract ERC721MaxQuantity is ERC721 {
 
   Counters.Counter private _tokenIds;
 
-  uint256 public maxQuantity = 1;
+  uint256 public maxQuantity;
 
   /**
    * @dev Constructor function
    */
   constructor (uint256 _maxQuantity) {
+    require(_maxQuantity > 0, "Max quantity should be greater than 0");
     maxQuantity = _maxQuantity;
   }
 
