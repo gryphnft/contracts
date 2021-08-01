@@ -20,6 +20,7 @@ requirements include the following.
 
  - Use ERC1155 instead of ERC721
  - Use Enjin or Polygon instead of Ethereum
+ - Rarible Compatibility
 
 #### Compatibility
 
