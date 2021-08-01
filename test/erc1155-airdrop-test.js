@@ -33,156 +33,74 @@ function hashToken(account, tokenId, quantity) {
   )
 }
 
-describe('ERC1155 NFT Preset Tests', function () {
-  it('Should deploy contract and mint', async function () {
-    const [owner, recipient] = await getAccounts(
-      2,
-      'ERC1155PresetVanilla',
-      //this is the game URL ?
-      'ipfs://QmfAHGBLjFtXESBqGSU4TjPGL88LbVAbZoVYz59Hvnv9tF'
-    )
+async function dropAndRedeem(contract) {
+  //get the signers
+  const signers = await ethers.getSigners()
 
-    //mint a token and transfer it to the recipient
-    await owner.contract.mint(owner.signer.address, 1, 1000, 0x0)
-    expect(await owner.contract.balanceOf(owner.signer.address, 1)).to.equal(1000)
+  //make the tree
+  const merkleTree1 = new MerkleTree(
+    [
+      hashToken(signers[1].address, 1, 10),
+      hashToken(signers[2].address, 1, 20)
+    ],
+    keccak256,
+    { sortPairs: true }
+  );
 
-    await owner.contract.safeTransferFrom(
-      owner.signer.address,
-      recipient.signer.address,
-      1,
-      10,
-      0x0
-    )
+  const merkleTree2 = new MerkleTree(
+    [
+      hashToken(signers[1].address, 2, 30),
+      hashToken(signers[2].address, 2, 40)
+    ],
+    keccak256,
+    { sortPairs: true }
+  );
 
-    expect(await owner.contract.balanceOf(owner.signer.address, 1)).to.equal(990)
-    expect(await owner.contract.balanceOf(recipient.signer.address, 1)).to.equal(10)
+  //make the drops
+  await contract.drop(1, merkleTree1.getHexRoot())
+  await contract.drop(2, merkleTree2.getHexRoot())
 
-    //NOTE: you save 50% on costs when you mint batch
-    await owner.contract.mintBatch(
-      owner.signer.address,
-      //token ids
-      [2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-      //amounts per token id
-      [2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000],
-      0x0
-    )
+  await contract.redeem(signers[1].address, 1, 10, merkleTree1.getHexProof(
+    hashToken(signers[1].address, 1, 10)
+  ), 0x0)
+  await contract.redeem(signers[2].address, 1, 20, merkleTree1.getHexProof(
+    hashToken(signers[2].address, 1, 20)
+  ), 0x0)
+  await contract.redeem(signers[1].address, 2, 30, merkleTree2.getHexProof(
+    hashToken(signers[1].address, 2, 30)
+  ), 0x0)
+  await contract.redeem(signers[2].address, 2, 40, merkleTree2.getHexProof(
+    hashToken(signers[2].address, 2, 40)
+  ), 0x0)
+}
 
-    expect(await owner.contract.balanceOf(owner.signer.address, 2)).to.equal(2000)
-    expect(await owner.contract.balanceOf(owner.signer.address, 3)).to.equal(3000)
-    expect(await owner.contract.balanceOf(owner.signer.address, 4)).to.equal(4000)
-
-    await owner.contract.safeTransferFrom(
-      owner.signer.address,
-      recipient.signer.address,
-      2,
-      20,
-      0x0
-    )
-
-    expect(await owner.contract.balanceOf(owner.signer.address, 2)).to.equal(1980)
-    expect(await owner.contract.balanceOf(recipient.signer.address, 2)).to.equal(20)
-  })
-
+describe('ERC1155 NFT Air Drop Tests', function () {
   it('Should allow redeeming of air drops', async function () {
     //now build the accounts
     const [owner, recipient1, recipient2] = await getAccounts(
       3,
-      'ERC1155PresetAirDrop',
+      'ERC1155AirDrop',
       //this is the game URL ?
       'ipfs://QmfAHGBLjFtXESBqGSU4TjPGL88LbVAbZoVYz59Hvnv9tF'
     )
 
-    //make the tree
-    const merkleTree1 = new MerkleTree(
-      [
-        hashToken(recipient1.signer.address, 1, 10),
-        hashToken(recipient2.signer.address, 1, 20)
-      ],
-      keccak256,
-      { sortPairs: true }
-    );
-
-    const merkleTree2 = new MerkleTree(
-      [
-        hashToken(recipient1.signer.address, 2, 30),
-        hashToken(recipient2.signer.address, 2, 40)
-      ],
-      keccak256,
-      { sortPairs: true }
-    );
-
-    //make the drops
-    await owner.contract.drop(1, merkleTree1.getHexRoot())
-    await owner.contract.drop(2, merkleTree2.getHexRoot())
-
-    //let recipient1 redeem token 1
-    await owner.contract.redeem(
-      //recipient address
-      recipient1.signer.address,
-      //token id
-      1,
-      //quantity
-      10,
-      //proof
-      merkleTree1.getHexProof(
-        hashToken(recipient1.signer.address, 1, 10)
-      ),
-      //data?
-      0x0
-    )
+    await dropAndRedeem(owner.contract)
 
     expect(await owner.contract.balanceOf(recipient1.signer.address, 1)).to.equal(10)
-
-    //let recipient2 redeem token 1
-    await owner.contract.redeem(
-      recipient2.signer.address,
-      1,
-      20,
-      merkleTree1.getHexProof(
-        hashToken(recipient2.signer.address, 1, 20)
-      ),
-      0x0
-    )
-
     expect(await owner.contract.balanceOf(recipient2.signer.address, 1)).to.equal(20)
-
-    //let recipient1 redeem token 2
-    await owner.contract.redeem(
-      recipient1.signer.address,
-      2,
-      30,
-      merkleTree2.getHexProof(
-        hashToken(recipient1.signer.address, 2, 30)
-      ),
-      0x0
-    )
-
     expect(await owner.contract.balanceOf(recipient1.signer.address, 2)).to.equal(30)
-
-    //let recipient2 redeem token 2
-    await owner.contract.redeem(
-      recipient2.signer.address,
-      2,
-      40,
-      merkleTree2.getHexProof(
-        hashToken(recipient2.signer.address, 2, 40)
-      ),
-      0x0
-    )
-
     expect(await owner.contract.balanceOf(recipient2.signer.address, 2)).to.equal(40)
   })
 
   it('Should list and delist token', async function () {
     const [owner, recipient] = await getAccounts(
       2,
-      'ERC1155PresetListable',
+      'ERC1155AirDrop',
       //this is the game URL ?
       'ipfs://QmfAHGBLjFtXESBqGSU4TjPGL88LbVAbZoVYz59Hvnv9tF'
     )
 
-    //mint and transfer
-    await owner.contract.mint(recipient.signer.address, 1, 1000, 0x0)
+    await dropAndRedeem(owner.contract)
 
     //let the owner try to list the token for sale
     let error = false
@@ -232,13 +150,12 @@ describe('ERC1155 NFT Preset Tests', function () {
   it('Should list and exchange token', async function () {
     const [owner, recipient1, recipient2] = await getAccounts(
       3,
-      'ERC1155PresetExchangable',
+      'ERC1155AirDrop',
       //this is the game URL ?
       'ipfs://QmfAHGBLjFtXESBqGSU4TjPGL88LbVAbZoVYz59Hvnv9tF'
     )
 
-    //mint and transfer
-    await owner.contract.mint(recipient1.signer.address, 1, 1000, 0x0)
+    await dropAndRedeem(owner.contract)
 
     const oneEther = ethers.utils.parseEther('1.0')
     const sixEther = ethers.utils.parseEther('2.0')
@@ -314,7 +231,7 @@ describe('ERC1155 NFT Preset Tests', function () {
   it('Should add royalties', async function () {
     const [owner, recipient1, recipient2, recipient3] = await getAccounts(
       4,
-      'ERC1155PresetTransferFees',
+      'ERC1155AirDrop',
       //this is the game URL ?
       'ipfs://QmfAHGBLjFtXESBqGSU4TjPGL88LbVAbZoVYz59Hvnv9tF'
     )
@@ -366,9 +283,9 @@ describe('ERC1155 NFT Preset Tests', function () {
   })
 
   it('Should list and exchange token with royalties', async function () {
-    const [contractOwner, creator, manager, tokenOwner, buyer] = await getAccounts(
-      5,
-      'ERC1155PresetExchangableFees',
+    const [contractOwner, tokenOwner, tokenOwner2, creator, manager, buyer] = await getAccounts(
+      6,
+      'ERC1155AirDrop',
       //this is the game URL ?
       'ipfs://QmfAHGBLjFtXESBqGSU4TjPGL88LbVAbZoVYz59Hvnv9tF'
     )
@@ -410,14 +327,14 @@ describe('ERC1155 NFT Preset Tests', function () {
 
     //----------------------------------------//
     // This is the minting
-    //fast forward ... (go straight to the token owner)
-    await contractOwner.contract.mint(tokenOwner.signer.address, 1, 1000, 0x0)
+    await dropAndRedeem(contractOwner.contract)
 
     //----------------------------------------//
     // This is the listing
     const listedAmount = ethers.utils.parseEther('10.0')
     //the token owner can only list their token for sale
     await tokenOwner.contract.list(1, listedAmount, 10)
+
     let listing = await tokenOwner.contract.getListing(tokenOwner.signer.address, 1)
     expect(listing.owner).to.equal(tokenOwner.signer.address)
     expect(listing.amount).to.equal(listedAmount)

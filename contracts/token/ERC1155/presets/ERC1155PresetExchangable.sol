@@ -2,11 +2,14 @@
 
 pragma solidity ^0.8.0;
 
-//implementation of ERC721
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+//custom abstract implementation of ERC721
+//used to allow token owners to list their tokens for sale
+import "./../extensions/ERC1155Exchangable.sol";
 
-contract ERC1155PresetVanilla is ERC1155 {
+contract ERC1155PresetExchangable is ERC1155Exchangable {
   constructor(string memory _uri) ERC1155(_uri) {}
+
+  //no methods or configuration needs to be added for this preset
 
   /**
    * @dev Creates `quantity` new tokens for `to`, of token type `id`.

@@ -1,6 +1,4 @@
 const { expect } = require("chai");
-const { MerkleTree } = require('merkletreejs');
-const keccak256 = require('keccak256');
 
 async function getAccounts(max, name, ...params) {
   //get the signers
@@ -23,21 +21,11 @@ async function getAccounts(max, name, ...params) {
   return accounts
 }
 
-function hashToken(account, tokenId, quantity) {
-  return Buffer.from(
-    ethers.utils.solidityKeccak256(
-      ['address', 'uint256', 'uint256'],
-      [account, tokenId, quantity]
-    ).slice(2),
-    'hex'
-  )
-}
-
-describe('ERC1155 NFT Preset Tests', function () {
+describe('ERC1155 NFT Exchange Tests', function () {
   it('Should deploy contract and mint', async function () {
     const [owner, recipient] = await getAccounts(
       2,
-      'ERC1155PresetVanilla',
+      'ERC1155Exchange',
       //this is the game URL ?
       'ipfs://QmfAHGBLjFtXESBqGSU4TjPGL88LbVAbZoVYz59Hvnv9tF'
     )
@@ -83,100 +71,10 @@ describe('ERC1155 NFT Preset Tests', function () {
     expect(await owner.contract.balanceOf(recipient.signer.address, 2)).to.equal(20)
   })
 
-  it('Should allow redeeming of air drops', async function () {
-    //now build the accounts
-    const [owner, recipient1, recipient2] = await getAccounts(
-      3,
-      'ERC1155PresetAirDrop',
-      //this is the game URL ?
-      'ipfs://QmfAHGBLjFtXESBqGSU4TjPGL88LbVAbZoVYz59Hvnv9tF'
-    )
-
-    //make the tree
-    const merkleTree1 = new MerkleTree(
-      [
-        hashToken(recipient1.signer.address, 1, 10),
-        hashToken(recipient2.signer.address, 1, 20)
-      ],
-      keccak256,
-      { sortPairs: true }
-    );
-
-    const merkleTree2 = new MerkleTree(
-      [
-        hashToken(recipient1.signer.address, 2, 30),
-        hashToken(recipient2.signer.address, 2, 40)
-      ],
-      keccak256,
-      { sortPairs: true }
-    );
-
-    //make the drops
-    await owner.contract.drop(1, merkleTree1.getHexRoot())
-    await owner.contract.drop(2, merkleTree2.getHexRoot())
-
-    //let recipient1 redeem token 1
-    await owner.contract.redeem(
-      //recipient address
-      recipient1.signer.address,
-      //token id
-      1,
-      //quantity
-      10,
-      //proof
-      merkleTree1.getHexProof(
-        hashToken(recipient1.signer.address, 1, 10)
-      ),
-      //data?
-      0x0
-    )
-
-    expect(await owner.contract.balanceOf(recipient1.signer.address, 1)).to.equal(10)
-
-    //let recipient2 redeem token 1
-    await owner.contract.redeem(
-      recipient2.signer.address,
-      1,
-      20,
-      merkleTree1.getHexProof(
-        hashToken(recipient2.signer.address, 1, 20)
-      ),
-      0x0
-    )
-
-    expect(await owner.contract.balanceOf(recipient2.signer.address, 1)).to.equal(20)
-
-    //let recipient1 redeem token 2
-    await owner.contract.redeem(
-      recipient1.signer.address,
-      2,
-      30,
-      merkleTree2.getHexProof(
-        hashToken(recipient1.signer.address, 2, 30)
-      ),
-      0x0
-    )
-
-    expect(await owner.contract.balanceOf(recipient1.signer.address, 2)).to.equal(30)
-
-    //let recipient2 redeem token 2
-    await owner.contract.redeem(
-      recipient2.signer.address,
-      2,
-      40,
-      merkleTree2.getHexProof(
-        hashToken(recipient2.signer.address, 2, 40)
-      ),
-      0x0
-    )
-
-    expect(await owner.contract.balanceOf(recipient2.signer.address, 2)).to.equal(40)
-  })
-
   it('Should list and delist token', async function () {
     const [owner, recipient] = await getAccounts(
       2,
-      'ERC1155PresetListable',
+      'ERC1155Exchange',
       //this is the game URL ?
       'ipfs://QmfAHGBLjFtXESBqGSU4TjPGL88LbVAbZoVYz59Hvnv9tF'
     )
@@ -232,7 +130,7 @@ describe('ERC1155 NFT Preset Tests', function () {
   it('Should list and exchange token', async function () {
     const [owner, recipient1, recipient2] = await getAccounts(
       3,
-      'ERC1155PresetExchangable',
+      'ERC1155Exchange',
       //this is the game URL ?
       'ipfs://QmfAHGBLjFtXESBqGSU4TjPGL88LbVAbZoVYz59Hvnv9tF'
     )
@@ -314,7 +212,7 @@ describe('ERC1155 NFT Preset Tests', function () {
   it('Should add royalties', async function () {
     const [owner, recipient1, recipient2, recipient3] = await getAccounts(
       4,
-      'ERC1155PresetTransferFees',
+      'ERC1155Exchange',
       //this is the game URL ?
       'ipfs://QmfAHGBLjFtXESBqGSU4TjPGL88LbVAbZoVYz59Hvnv9tF'
     )
@@ -368,7 +266,7 @@ describe('ERC1155 NFT Preset Tests', function () {
   it('Should list and exchange token with royalties', async function () {
     const [contractOwner, creator, manager, tokenOwner, buyer] = await getAccounts(
       5,
-      'ERC1155PresetExchangableFees',
+      'ERC1155Exchange',
       //this is the game URL ?
       'ipfs://QmfAHGBLjFtXESBqGSU4TjPGL88LbVAbZoVYz59Hvnv9tF'
     )
