@@ -21,7 +21,7 @@ async function getAccounts(max, name, ...params) {
   return accounts
 }
 
-describe('ERC721 NFT Pre Mint Tests', function () {
+describe('ERC721PreMint Tests', function () {
   it('Should deploy contract, mint and burn token', async function () {
     //we need to get the signers to add their address on contruction...
     const signers = await ethers.getSigners()

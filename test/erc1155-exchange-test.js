@@ -21,7 +21,7 @@ async function getAccounts(max, name, ...params) {
   return accounts
 }
 
-describe('ERC1155 NFT Exchange Tests', function () {
+describe('ERC1155Exchange Tests', function () {
   it('Should deploy contract and mint', async function () {
     const [owner, recipient] = await getAccounts(
       2,

@@ -21,7 +21,7 @@ async function getAccounts(max, name, ...params) {
   return accounts
 }
 
-describe('ERC721 NFT Exchange Tests', function () {
+describe('ERC721Exchange Tests', function () {
   it('Should deploy contract, mint and burn token', async function () {
     const [owner, recipient] = await getAccounts(
       //number of accounts

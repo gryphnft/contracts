@@ -74,7 +74,7 @@ async function dropAndRedeem(contract) {
   ), 0x0)
 }
 
-describe('ERC1155 NFT Air Drop Tests', function () {
+describe('ERC1155AirDrop Tests', function () {
   it('Should allow redeeming of air drops', async function () {
     //now build the accounts
     const [owner, recipient1, recipient2] = await getAccounts(

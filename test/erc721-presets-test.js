@@ -33,8 +33,8 @@ function hashToken(tokenId, account) {
   )
 }
 
-describe('ERC721 NFT Preset Tests', function () {
-  it('Should deploy contract and mint', async function () {
+describe('ERC721 Preset Tests', function () {
+  it('ERC721PresetVanilla: Should deploy contract and mint', async function () {
     const [owner, recipient] = await getAccounts(
       2,
       'ERC721PresetVanilla',
@@ -48,7 +48,7 @@ describe('ERC721 NFT Preset Tests', function () {
     expect(await owner.contract.ownerOf(1)).to.equal(recipient.signer.address)
   })
 
-  it('Should mint and burn token', async function () {
+  it('ERC721PresetZeppelin: Should mint and burn token', async function () {
     const [owner, recipient] = await getAccounts(
       2,
       'ERC721PresetZeppelin',
@@ -89,7 +89,7 @@ describe('ERC721 NFT Preset Tests', function () {
     expect(error).to.equal(true)
   })
 
-  it('Should add contract URI', async function () {
+  it('ERC721PresetContractURI: Should add contract URI', async function () {
     const [owner, recipient] = await getAccounts(
       2,
       'ERC721PresetContractURI',
@@ -107,7 +107,7 @@ describe('ERC721 NFT Preset Tests', function () {
     )
   })
 
-  it('Should have a max quantity when minting', async function () {
+  it('ERC721PresetMaxQuantity: Should have a max quantity when minting', async function () {
     const [owner, recipient1, recipient2] = await getAccounts(
       3,
       'ERC721PresetMaxQuantity',
@@ -136,7 +136,7 @@ describe('ERC721 NFT Preset Tests', function () {
     expect(error).to.equal(true)
   })
 
-  it('Should pre-mint tokens on deploy', async function () {
+  it('ERC721PresetPreMint: Should pre-mint tokens on deploy', async function () {
     //we need to get the signers to add their address on contruction...
     const signers = await ethers.getSigners()
     //now build the accounts
@@ -155,7 +155,7 @@ describe('ERC721 NFT Preset Tests', function () {
     expect(await owner.contract.ownerOf(2)).to.equal(recipient2.signer.address)
   })
 
-  it('Should allow redeeming of air drops', async function () {
+  it('ERC721PresetAirDrop: Should allow redeeming of air drops', async function () {
     //we need to get the signers to add their address on contruction...
     const signers = await ethers.getSigners()
 
@@ -199,7 +199,7 @@ describe('ERC721 NFT Preset Tests', function () {
     expect(await owner.contract.ownerOf(2)).to.equal(recipient2.signer.address)
   })
 
-  it('Should list and delist token', async function () {
+  it('ERC721PresetListable: Should list and delist token', async function () {
     const [owner, recipient] = await getAccounts(
       2,
       'ERC721PresetListable',
@@ -244,7 +244,7 @@ describe('ERC721 NFT Preset Tests', function () {
     expect(listing3).to.equal(0)
   })
 
-  it('Should list and exchange token', async function () {
+  it('ERC721PresetExchangable: Should list and exchange token', async function () {
     const [owner, recipient1, recipient2] = await getAccounts(
       3,
       'ERC721PresetExchangable',
@@ -285,7 +285,7 @@ describe('ERC721 NFT Preset Tests', function () {
     expect(error).to.equal(true)
   })
 
-  it('Should add royalties', async function () {
+  it('ERC721PresetTransferFees: Should add royalties', async function () {
     const [owner, recipient1, recipient2, recipient3] = await getAccounts(
       4,
       'ERC721PresetTransferFees',
@@ -339,7 +339,7 @@ describe('ERC721 NFT Preset Tests', function () {
     expect(error).to.equal(true)
   })
 
-  it('Should list and exchange token with royalties', async function () {
+  it('ERC721PresetExchangableFees: Should list and exchange token with royalties', async function () {
     const [contractOwner, creator, manager, tokenOwner, buyer] = await getAccounts(
       5,
       'ERC721PresetExchangableFees',

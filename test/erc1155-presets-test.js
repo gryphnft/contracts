@@ -33,8 +33,8 @@ function hashToken(account, tokenId, quantity) {
   )
 }
 
-describe('ERC1155 NFT Preset Tests', function () {
-  it('Should deploy contract and mint', async function () {
+describe('ERC1155 Preset Tests', function () {
+  it('ERC1155PresetVanilla: Should deploy contract and mint', async function () {
     const [owner, recipient] = await getAccounts(
       2,
       'ERC1155PresetVanilla',
@@ -83,7 +83,7 @@ describe('ERC1155 NFT Preset Tests', function () {
     expect(await owner.contract.balanceOf(recipient.signer.address, 2)).to.equal(20)
   })
 
-  it('Should allow redeeming of air drops', async function () {
+  it('ERC1155PresetAirDrop: Should allow redeeming of air drops', async function () {
     //now build the accounts
     const [owner, recipient1, recipient2] = await getAccounts(
       3,
@@ -173,7 +173,7 @@ describe('ERC1155 NFT Preset Tests', function () {
     expect(await owner.contract.balanceOf(recipient2.signer.address, 2)).to.equal(40)
   })
 
-  it('Should list and delist token', async function () {
+  it('ERC1155PresetListable: Should list and delist token', async function () {
     const [owner, recipient] = await getAccounts(
       2,
       'ERC1155PresetListable',
@@ -229,7 +229,7 @@ describe('ERC1155 NFT Preset Tests', function () {
     expect(listing.quantity).to.equal(0)
   })
 
-  it('Should list and exchange token', async function () {
+  it('ERC1155PresetExchangable: Should list and exchange token', async function () {
     const [owner, recipient1, recipient2] = await getAccounts(
       3,
       'ERC1155PresetExchangable',
@@ -311,7 +311,7 @@ describe('ERC1155 NFT Preset Tests', function () {
     expect(error).to.equal(true)
   })
 
-  it('Should add royalties', async function () {
+  it('ERC1155PresetTransferFees: Should add royalties', async function () {
     const [owner, recipient1, recipient2, recipient3] = await getAccounts(
       4,
       'ERC1155PresetTransferFees',
@@ -365,7 +365,7 @@ describe('ERC1155 NFT Preset Tests', function () {
     expect(error).to.equal(true)
   })
 
-  it('Should list and exchange token with royalties', async function () {
+  it('ERC1155PresetExchangableFees: Should list and exchange token with royalties', async function () {
     const [contractOwner, creator, manager, tokenOwner, buyer] = await getAccounts(
       5,
       'ERC1155PresetExchangableFees',

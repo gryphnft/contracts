@@ -55,6 +55,7 @@ module.exports = {
   },
   gasReporter: {
     currency: 'USD',
+    token: 'MATIC', //comment this out if you want ETH
     coinmarketcap: CMC_KEY,
     gasPrice: 200,
   }

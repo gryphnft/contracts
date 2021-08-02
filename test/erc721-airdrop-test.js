@@ -33,7 +33,7 @@ function hashToken(tokenId, account) {
   )
 }
 
-describe('ERC721 NFT AirDrop Tests', function () {
+describe('ERC721AirDrop Tests', function () {
   it('Should deploy contract, redeem and burn token', async function () {
     //we need to get the signers to add their address on contruction...
     const signers = await ethers.getSigners()
