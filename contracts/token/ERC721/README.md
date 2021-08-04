@@ -170,7 +170,7 @@ Mints `tokenId`, classifies it as `classId` and transfers to `recipient`.
 
  - **classId** - arbitrary class ID
  - **tokenId** - arbitrary token ID *(Should be unique)*
- - **recipient** - Wallet address to remove from the fee table
+ - **recipient** - Wallet address to send the token to
 
 ```js
 await nft.mint(100, 200 '0xabc123') // 1000 is 10.00%
@@ -200,6 +200,18 @@ await nft.unpause()
 
 Only the token owner can do the following actions. These are not included in the
 project's API and should be implemented on the client side.
+
+#### Burn
+
+Burns a token.
+
+`burn(uint256 tokenId)`
+
+ - **tokenId** - ex. 1
+
+```js
+await nft.burn(1)
+```
 
 ##### List
 
@@ -348,7 +360,7 @@ Returns the current supply size of `classId`
 `classSupply(uint256 classId)`
 
 ```js
-await nft.classFilled(100) //--> 1000
+await nft.classSupply(100) //--> 1000
 ```
 
 ##### Get the Fee of a Person

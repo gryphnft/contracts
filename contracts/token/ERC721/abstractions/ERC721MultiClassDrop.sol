@@ -38,6 +38,10 @@ abstract contract ERC721MultiClassDrop is IERC721MultiClassDrop {
    * @dev Defines a redeemable class
    */
   function _drop(uint256 classId, bytes32 merkleroot) internal virtual {
+    require(
+      _root[classId] == 0,
+      "ERC721MultiClassDrop: Class has already been dropped"
+    );
     //save the merkle root
     _root[classId] = merkleroot;
   }
