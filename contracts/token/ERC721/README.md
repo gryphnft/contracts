@@ -114,52 +114,7 @@ Removes a `recipient` from the fee table of a `classId`.
  - **recipient** - Wallet address to remove from the fee table
 
 ```js
-await nft.allocate(100, '0xabc123', 1000) // 1000 is 10.00%
-```
-
-##### Drop
-
-Adds a merkle tree based airdrop to a `classId`. A `merkleroot` is used to
-verify that a recipient could redeem a token. This is method is preferred
-over batch minting because it's cheaper than uploading a set of recipients.
-
-`drop(uint256 classId, bytes32 merkleroot)`
-
- - **classId** - arbitrary class ID
- - **merkleroot** - Root hash of a merkle tree (see: [merkletreejs](https://www.npmjs.com/package/merkletreejs))
-
-```js
-const { MerkleTree } = require('merkletreejs');
-const keccak256 = require('keccak256');
-
-//helper to hash
-function hashToken(classId, tokenId, recipient) {
-  return Buffer.from(
-    ethers.utils.solidityKeccak256(
-      ['uint256', 'uint256', 'address'],
-      [classId, tokenId, recipient]
-    ).slice(2),
-    'hex'
-  )
-}
-
-const classId = 100
-const tokenId1 = 200
-const tokenId2 = 300
-const recipient = '0x63FC745B5309cE72921ED6dF48D4eAdddEB55f27'
-
-//make the tree
-const merkleTree = new MerkleTree(
-  [
-    hashToken(classId, tokenId1, recipient),
-    hashToken(classId, tokenId2, recipient)
-  ],
-  keccak256,
-  { sortPairs: true }
-);
-
-//now drop it
-await nft.drop(classId, merkleTree.getHexRoot())
+await nft.deallocate(100, '0xabc123')
 ```
 
 ##### Mint
@@ -243,58 +198,19 @@ await nft.delist(200)
 Anyone can do the following actions. These are not included in the
 project's API and should be implemented on the client side.
 
-##### Redeem
+##### Lazy Mint
 
-Allows anyone to redeem a token from an air drop for themselves or others.
+Allows anyone to mint a token
 
-> The one that redeems pays the gas cost.
+`lazyMint(uint256 classId, uint256 tokenId, address recipient, bytes proof)`
 
-`redeem(uint256 classId, uint256 tokenId, address recipient, bytes32[] calldata proof)`
-
- - **classId** - class ID that was provided in `drop()`
- - **tokenId** - The token that was promised to the recipient
- - **recipient** - The recipient where the token will be sent
- - **proof** - A hash that will be used to prove that this recipient should get this token
+ - **classId** - arbitrary class ID
+ - **tokenId** - arbitrary token ID *(Should be unique)*
+ - **recipient** - Wallet address to send the token to
+ - **proof** - Signature the contract ownner must have signed
 
 ```js
-const { MerkleTree } = require('merkletreejs');
-const keccak256 = require('keccak256');
-
-//helper to hash
-function hashToken(classId, tokenId, recipient) {
-  return Buffer.from(
-    ethers.utils.solidityKeccak256(
-      ['uint256', 'uint256', 'address'],
-      [classId, tokenId, recipient]
-    ).slice(2),
-    'hex'
-  )
-}
-
-const classId = 100
-const tokenId1 = 200
-const tokenId2 = 300
-const recipient = '0x63FC745B5309cE72921ED6dF48D4eAdddEB55f27'
-
-//make the tree
-const merkleTree = new MerkleTree(
-  [
-    hashToken(classId, tokenId1, recipient),
-    hashToken(classId, tokenId2, recipient)
-  ],
-  keccak256,
-  { sortPairs: true }
-);
-
-//now redeem it
-await nft.redeem(
-  classId,
-  tokenId1,
-  recipient,
-  merkleTree.getHexProof(
-    hashToken(classId, tokenId1, recipient)
-  )
-)
+await nft.lazyMint(100, 200, '0xabc123', '0xabc123')
 ```
 
 ##### Exchange

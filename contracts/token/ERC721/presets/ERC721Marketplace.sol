@@ -10,19 +10,18 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Pausable.sol";
 //Abstract extension of ERC721MultiClass that allows a class to reference data (like a uri)
 import "./../abstractions/ERC721MultiClassData.sol";
-//Abstract extension of ERC721MultiClass that allows air drops for all classes
-import "./../abstractions/ERC721MultiClassDrop.sol";
 //Abstract extension of ERC721MultiClass that allows tokens to be listed and exchanged considering royalty fees
 import "./../abstractions/ERC721MultiClassExchange.sol";
 //Abstract extension of ERC721MultiClass that manages class sizes
 import "./../abstractions/ERC721MultiClassSize.sol";
+//For verifying messages in lazyMint
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract ERC721Marketplace is
   ERC721,
   ERC721Burnable,
   ERC721Pausable,
   ERC721MultiClassData,
-  ERC721MultiClassDrop,
   ERC721MultiClassExchange,
   ERC721MultiClassSize
 {
@@ -78,30 +77,29 @@ contract ERC721Marketplace is
   }
 
   /**
-   * @dev Defines a redeemable class
+   * @dev Allows anyone to self mint a token
    */
-  function drop(uint256 classId, bytes32 merkleroot)
-    external virtual onlyAdmin
-  {
-    _drop(classId, merkleroot);
-  }
-
-  /**
-   * @dev Allows anyone to generally redeem anyone's token
-   */
-  function redeem(
+  function lazyMint(
     uint256 classId,
     uint256 tokenId,
     address recipient,
-    bytes32[] calldata proof
+    bytes calldata proof
   ) external virtual {
     //check size
     require(!classFilled(classId), "ERC721Marketplace: Class filled.");
-    //error if the proof is not redeemable
+    //make sure the admin signed this off
     require(
-      redeemable(classId, tokenId, recipient, proof),
-      "ERC721MultiClassDrop: Recipient does not own this token."
+      ECDSA.recover(
+        ECDSA.toEthSignedMessageHash(
+          keccak256(
+            abi.encodePacked(classId, tokenId, recipient)
+          )
+        ),
+        proof
+      ) == _admin,
+      "ERC721Marketplace: Invalid proof."
     );
+
     //mint first and wait for errors
     _safeMint(recipient, tokenId);
     //then classify it

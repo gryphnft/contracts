@@ -1,6 +1,4 @@
 const { expect } = require("chai");
-const { MerkleTree } = require('merkletreejs');
-const keccak256 = require('keccak256');
 
 async function getSigners(name, ...params) {
   //deploy the contract
@@ -29,7 +27,7 @@ function hashToken(classId, tokenId, recipient) {
 }
 
 describe('ERC721Marketplace Tests', function () {
-  it('Should register class and setup fees, mint/airdrop/list/delist and buy token', async function () {
+  it('Should register class and setup fees, mint/list/delist and buy token', async function () {
     const [contractOwner, creator, manager, tokenOwner, buyer] = await getSigners(
       'ERC721Marketplace',
       'GRYPH Street Art',
@@ -88,40 +86,38 @@ describe('ERC721Marketplace Tests', function () {
     expect(await contractOwner.withContract.classOf(tokenId)).to.equal(classId)
 
     //----------------------------------------//
-    // This is the air drop
+    // This is the lazy minting
     //define tokens
     const tokenId2 = 300
     const tokenId3 = 400
 
-    //make the tree
-    const merkleTree = new MerkleTree(
-      [
-        hashToken(classId, tokenId2, tokenOwner.address),
-        hashToken(classId, tokenId3, tokenOwner.address)
-      ],
-      keccak256,
-      { sortPairs: true }
-    );
+    //make a message (its a buffer)
+    const messages = [
+      hashToken(classId, tokenId2, tokenOwner.address),
+      hashToken(classId, tokenId3, tokenOwner.address)
+    ]
+    //let the contract owner sign it (its a buffer)
+    const signatures = [
+      await contractOwner.signMessage(messages[0]),
+      await contractOwner.signMessage(messages[1])
+    ]
 
-    await contractOwner.withContract.drop(classId, merkleTree.getHexRoot())
-    //let the contract owner redeem a token for the token owner
-    await contractOwner.withContract.redeem(
+    //let the contract owner lazy mint a token for the token owner
+    await contractOwner.withContract.lazyMint(
       classId,
       tokenId2,
       tokenOwner.address,
-      merkleTree.getHexProof(
-        hashToken(classId, tokenId2, tokenOwner.address)
-      )
+      signatures[0]
     )
-    //let the token owner redeem a token for themself
-    await tokenOwner.withContract.redeem(
+
+    //let the token owner lazy mint a token for themself
+    await tokenOwner.withContract.lazyMint(
       classId,
       tokenId3,
       tokenOwner.address,
-      merkleTree.getHexProof(
-        hashToken(classId, tokenId3, tokenOwner.address)
-      )
+      signatures[1]
     )
+
     expect(await contractOwner.withContract.ownerOf(tokenId2)).to.equal(tokenOwner.address)
     expect(await contractOwner.withContract.classOf(tokenId2)).to.equal(classId)
     expect(await contractOwner.withContract.ownerOf(tokenId3)).to.equal(tokenOwner.address)
@@ -173,7 +169,7 @@ describe('ERC721Marketplace Tests', function () {
     ).to.equal(-10)
   })
 
-  it('Should stress airdrops', async function () {
+  it('Should stress lazy minting', async function () {
     const [contractOwner, tokenOwner] = await getSigners(
       'ERC721Marketplace',
       'GRYPH Street Art',
@@ -189,41 +185,40 @@ describe('ERC721Marketplace Tests', function () {
     expect(await contractOwner.withContract.referenceOf(classId)).to.equal(classURI)
 
     //----------------------------------------//
-    // This is the air drop
+    // This is the lazy mint
     //define tokens
     const tokenId1 = 200
     const tokenId2 = 300
     const tokenId3 = 400
 
-    //make the tree
-    const merkleTree = new MerkleTree(
-      [
-        hashToken(classId, tokenId1, tokenOwner.address),
-        hashToken(classId, tokenId2, tokenOwner.address),
-        hashToken(classId, tokenId3, tokenOwner.address)
-      ],
-      keccak256,
-      { sortPairs: true }
-    );
+    //make a message (its a buffer)
+    const messages = [
+      hashToken(classId, tokenId1, tokenOwner.address),
+      hashToken(classId, tokenId2, tokenOwner.address),
+      hashToken(classId, tokenId3, tokenOwner.address)
+    ]
 
-    await contractOwner.withContract.drop(classId, merkleTree.getHexRoot())
-    //let the contract owner redeem a token for the token owner
-    await contractOwner.withContract.redeem(
+    //let the contract owner sign it (its a buffer)
+    const signatures = [
+      await contractOwner.signMessage(messages[0]),
+      await contractOwner.signMessage(messages[1]),
+      await contractOwner.signMessage(messages[2])
+    ]
+
+    //let the contract owner lazy mint a token for the token owner
+    await contractOwner.withContract.lazyMint(
       classId,
       tokenId1,
       tokenOwner.address,
-      merkleTree.getHexProof(
-        hashToken(classId, tokenId1, tokenOwner.address)
-      )
+      signatures[0]
     )
-    //let the token owner redeem a token for themself
-    await tokenOwner.withContract.redeem(
+
+    //let the token owner lazy mint a token for themself
+    await tokenOwner.withContract.lazyMint(
       classId,
       tokenId2,
       tokenOwner.address,
-      merkleTree.getHexProof(
-        hashToken(classId, tokenId2, tokenOwner.address)
-      )
+      signatures[1]
     )
 
     //----------------------------------------//
@@ -233,41 +228,35 @@ describe('ERC721Marketplace Tests', function () {
     expect(await contractOwner.withContract.ownerOf(tokenId2)).to.equal(tokenOwner.address)
     expect(await contractOwner.withContract.classOf(tokenId2)).to.equal(classId)
 
-    //let the token owner redeem a token that they already have
+    //let the token owner mint a token that they already have
     expect(
-      tokenOwner.withContract.redeem(
+      tokenOwner.withContract.lazyMint(
         classId,
         tokenId1,
         tokenOwner.address,
-        merkleTree.getHexProof(
-          hashToken(classId, tokenId1, tokenOwner.address)
-        )
+        signatures[0]
       )
     ).to.be.revertedWith('ERC721: token already minted')
 
     //let the contract owner redeem a token for themself
     expect(
-      tokenOwner.withContract.redeem(
+      contractOwner.withContract.lazyMint(
         classId,
         tokenId2,
         contractOwner.address,
-        merkleTree.getHexProof(
-          hashToken(classId, tokenId2, contractOwner.address)
-        )
+        signatures[1]
       )
-    ).to.be.revertedWith('ERC721MultiClassDrop: Recipient does not own this token.')
+    ).to.be.revertedWith('ERC721Marketplace: Invalid proof.')
 
-    //let the contract owner redeem a token an unclaimed token for themself using a valid proof
+    //let the contract owner redeem a token an unclaimed token for themself using a valid signature
     expect(
-      tokenOwner.withContract.redeem(
+      contractOwner.withContract.lazyMint(
         classId,
         tokenId3,
         contractOwner.address,
-        merkleTree.getHexProof(
-          hashToken(classId, tokenId3, tokenOwner.address)
-        )
+        signatures[2]
       )
-    ).to.be.revertedWith('ERC721MultiClassDrop: Recipient does not own this token.')
+    ).to.be.revertedWith('ERC721Marketplace: Invalid proof.')
   })
 
   it('Should stress minting', async function () {
