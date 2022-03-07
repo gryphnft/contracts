@@ -36,7 +36,7 @@ contract GryphToken is
    * to the account that deploys the contract.
    */
   constructor() 
-    ERC20("Arkonia", "AOD")
+    ERC20("GRYPH", "GRYPH")
     ERC20Capped(1000000000 ether) 
   {
     address sender = _msgSender();
@@ -52,7 +52,7 @@ contract GryphToken is
    * @dev Creates `amount` new tokens for `to`.
    */
   function mint(address to, uint256 amount) 
-    public virtual onlyRole(MINTER_ROLE)  
+    public virtual whenNotPaused onlyRole(MINTER_ROLE)  
   {
     _mint(to, amount);
   }

@@ -30,9 +30,10 @@ interface IGryphToken is IERC20 {
 
 // ============ Errors ============
 
+error InvalidStage();
+error InvalidRefund();
 error InvalidRelease();
 error InvalidVesting();
-error InvalidRefund();
 error InvalidWithdraw();
 
 contract GryphVesting is 
@@ -117,7 +118,7 @@ contract GryphVesting is
    * Default implementation is a linear vesting curve.
    */
   function totalReleasableAmount(address beneficiary, uint64 timestamp) 
-    public view virtual returns (uint256) 
+    public view returns (uint256) 
   {
     uint amount = totalVestedAmount(beneficiary, timestamp);
     return amount - releasedTokens[beneficiary];
@@ -128,7 +129,7 @@ contract GryphVesting is
    * Default implementation is a linear vesting curve.
    */
   function totalVestedAmount(address beneficiary, uint64 timestamp) 
-    public view virtual returns (uint256) 
+    public view returns (uint256) 
   {
     //if time now is more than the vested date
     if (timestamp > VESTED_DATE) {
@@ -155,7 +156,7 @@ contract GryphVesting is
   /**
    * @dev Returns the unlock date
    */
-  function unlockDate() public virtual view returns(uint64) {
+  function unlockDate() public view returns(uint64) {
     if (_unlockedDate > 0) {
       return _unlockedDate;
     }
@@ -168,7 +169,7 @@ contract GryphVesting is
    * @dev Allows anyone to invest during the current stage for an `amount`
    */
   function buy(address beneficiary, uint256 amount) 
-    external virtual payable nonReentrant 
+    external payable nonReentrant 
   {
     // if no amount
     if (amount == 0 
@@ -179,7 +180,7 @@ contract GryphVesting is
       //if the amount exceeds the token limit
       || (currentTokenAllocated + amount) > currentTokenLimit
       //calculate eth amount = 1000 * 0.000005 ether
-      || msg.value < (amount * currentTokenPrice)
+      || msg.value < ((amount * currentTokenPrice) / 1 ether)
     ) revert InvalidVesting();
 
     //track ether collected for refund
@@ -193,7 +194,7 @@ contract GryphVesting is
    *
    * Emits a {TokensReleased} event.
    */
-  function release(address beneficiary) public virtual nonReentrant {
+  function release(address beneficiary) public nonReentrant {
     //if paused or not unlocked yet
     if (paused() || uint64(block.timestamp) < unlockDate()) 
       revert InvalidRelease();
@@ -222,7 +223,7 @@ contract GryphVesting is
   /**
    * @dev Release $GRYPH that have already vested.
    */
-  function refund(address beneficiary) public virtual nonReentrant {
+  function refund(address beneficiary) public nonReentrant {
     //should not refund if paused
     if (paused()
       //should not refund if not refunding
@@ -253,7 +254,7 @@ contract GryphVesting is
   /**
    * @dev Pauses all token transfers.
    */
-  function pause() public virtual onlyRole(PAUSER_ROLE) {
+  function pause() public onlyRole(PAUSER_ROLE) {
     _pause();
   }
   
@@ -261,7 +262,7 @@ contract GryphVesting is
    * @dev Unpauses all token transfers.
    */
   function refundAll(bool yes) 
-    public virtual onlyRole(DEFAULT_ADMIN_ROLE) 
+    public onlyRole(DEFAULT_ADMIN_ROLE) 
   {
     //dont allow refund if something was withdrawn
     if (currentTotalWithdrawn > 0) revert InvalidRefund();
@@ -269,10 +270,22 @@ contract GryphVesting is
   }
 
   /**
+   * @dev Updates the sale stage
+   */
+  function stage(uint256 price, uint256 limit) 
+    public onlyRole(DEFAULT_ADMIN_ROLE) 
+  {
+    if (price < currentTokenPrice || limit < currentTokenLimit) 
+      revert InvalidStage();
+    currentTokenPrice = price;
+    currentTokenLimit = limit;
+  }
+
+  /**
    * @dev Unlocks vesting tokens
    */
   function unlock(uint64 timestamp) 
-    public virtual onlyRole(DEFAULT_ADMIN_ROLE) 
+    public onlyRole(DEFAULT_ADMIN_ROLE) 
   {
     _unlockedDate = timestamp;
   }
@@ -280,7 +293,7 @@ contract GryphVesting is
   /**
    * @dev Unpauses all token transfers.
    */
-  function unpause() public virtual onlyRole(PAUSER_ROLE) {
+  function unpause() public onlyRole(PAUSER_ROLE) {
     _unpause();
   }
 
@@ -288,7 +301,7 @@ contract GryphVesting is
    * @dev Allow an admin to manually vest a `beneficiary` for an `amount`
    */
   function vest(address beneficiary, uint256 amount) 
-    public virtual onlyRole(DEFAULT_ADMIN_ROLE) 
+    public onlyRole(DEFAULT_ADMIN_ROLE) 
   {
     _vest(beneficiary, amount); 
   }
@@ -297,7 +310,7 @@ contract GryphVesting is
    * @dev Sends the specified `amount` to the treasury
    */
   function sendToTreasury(uint256 amount) 
-    external virtual nonReentrant onlyRole(DEFAULT_ADMIN_ROLE)
+    external nonReentrant onlyRole(DEFAULT_ADMIN_ROLE)
   {
     //don't allow to send if refunding
     if (refunding) revert InvalidWithdraw();
@@ -311,7 +324,7 @@ contract GryphVesting is
    * @dev Sends the specified `amount` to the economy
    */
   function sendToEconomy(uint256 amount) 
-    external virtual nonReentrant onlyRole(DEFAULT_ADMIN_ROLE)
+    external nonReentrant onlyRole(DEFAULT_ADMIN_ROLE)
   {
     //don't allow to send if refunding
     if (refunding) revert InvalidWithdraw();
@@ -325,7 +338,7 @@ contract GryphVesting is
    * This method exists to transfer out tokens funds.
    */
   function withdraw(address erc20, address to, uint256 amount) 
-    external virtual nonReentrant onlyRole(DEFAULT_ADMIN_ROLE)
+    external nonReentrant onlyRole(DEFAULT_ADMIN_ROLE)
   {
     SafeERC20.safeTransfer(IERC20(erc20), to, amount);
   }
@@ -335,7 +348,7 @@ contract GryphVesting is
   /**
    * @dev Vest a `beneficiary` for an `amount`
    */
-  function _vest(address beneficiary, uint256 amount) internal virtual {
+  function _vest(address beneficiary, uint256 amount) internal {
     // if no amount or refunding
     if (amount == 0 || refunding) revert InvalidVesting();
     //now add to the beneficiary

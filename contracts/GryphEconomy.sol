@@ -33,7 +33,7 @@ interface IERC20Capped is IERC20 {
 
 error InvalidAmount();
 
-contract GryphEconomyEngine is 
+contract GryphEconomy is 
   AccessControlEnumerable, 
   ReentrancyGuard,
   Pausable 
