@@ -40,7 +40,7 @@ contract GryphVesting is
   AccessControlEnumerable, 
   ReentrancyGuard 
 {
-  //so we can invoke mint function in vest and invest
+  //used in release()
   using Address for address;
 
   // ============ Events ============
