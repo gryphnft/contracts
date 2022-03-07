@@ -22,9 +22,13 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 //  https://www.gry.ph/
 //
 
+// ============ Interfaces ============
+
 interface IGryphToken is IERC20 {
   function mint(address to, uint256 amount) external;
 }
+
+// ============ Errors ============
 
 error InvalidRelease();
 error InvalidVesting();
