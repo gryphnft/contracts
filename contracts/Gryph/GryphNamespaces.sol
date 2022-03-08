@@ -4,12 +4,14 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
+import "../ERC721/ERC721Base.sol";
+import "../utils/Base64.sol";
 
 //
 //     ______  _______   ____  ____   _______  ____  ____  
@@ -28,9 +30,9 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 error InvalidName();
 error InvalidAmountSent();
 
-contract GryphNamespaces is ERC721, Ownable, ReentrancyGuard {
+contract GryphNamespaces is ERC721Base, Ownable, ReentrancyGuard {
   using Counters for Counters.Counter;
-  // ============ Constants ============
+  // ============ Immutable ============
 
   uint256[] public PRICES = [
     0.192 ether, //4 letters
@@ -41,6 +43,8 @@ contract GryphNamespaces is ERC721, Ownable, ReentrancyGuard {
     0.006 ether, //9 letters
     0.003 ether  //10 letters or more
   ];
+
+  string private DESCRIPTION = "GRY.PH is a cross chain NFT marketplace. Holders of this collection namespace have the rights to customize its contents";
 
   // ============ Storage ============
 
@@ -55,12 +59,35 @@ contract GryphNamespaces is ERC721, Ownable, ReentrancyGuard {
   //mapping of names to blacklist
   mapping(string => bool) public blacklisted;
 
+  string private _baseURI;
+
   // ============ Deploy ============
 
   /**
    * @dev Sets the erc721 required fields
    */
-  constructor() ERC721("Gryph Namespaces", "GNS") {}
+  constructor() ERC721Base("Gryph Namespaces", "GNS") {}
+
+  // ============ Read Methods ============
+
+  /**
+   * @dev See {IERC721Metadata-tokenURI}.
+   */
+  function tokenURI(uint256 tokenId) public view returns(string memory) {
+    if(!_exists(tokenId)) revert NonExistentToken();
+    string memory name = tokenName[tokenId];
+    return string(
+      abi.encodePacked(
+        "data:application/json;base64,",
+        Base64.encode(bytes(abi.encodePacked(
+          '{"name":"', name, '.gry.ph",',
+          '"description": "', DESCRIPTION, '",',
+          '"animation_url": "', _baseURI, '/namespace?', name, '",',
+          '"image":"', _baseURI, '/gryph-water.svg"}'
+        )))
+      )
+    );
+  }
 
   // ============ Write Methods ============
 
@@ -101,6 +128,13 @@ contract GryphNamespaces is ERC721, Ownable, ReentrancyGuard {
    */
   function mint(address recipient, string memory name) public onlyOwner {
     _nameMint(recipient, name);
+  }
+
+  /**
+   * @dev Updates the base token uri
+   */
+  function setBaseURI(string memory uri) public onlyOwner {
+    _baseURI = uri;
   }
 
   /**

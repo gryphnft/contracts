@@ -100,7 +100,6 @@ describe('GryphEconomy Tests', function () {
   it('Should have a buy and sell price', async function () {
     const { owner } = this.signers
 
-    console.log('- ', (await owner.withEconomy.balanceEther()).toString())
     expect(await owner.withEconomy.buyingFor(
       ethers.utils.parseEther('10')
     )).to.equal(
