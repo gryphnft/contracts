@@ -36,7 +36,7 @@ describe('GryphNamespaces Tests', function () {
       owner, 
       holder1, 
       holder2
-    ] = await getSigners('GryphNamespaces')
+    ] = await getSigners('GryphNamespaces', 'https://ipfs.io/ipfs/bafkreicw32mefimobvabviirb7rao45r3kpy5zdudiputyubcmp2gag4xa')
 
     await owner.withContract.setBaseURI('http://localhost:3000')
     

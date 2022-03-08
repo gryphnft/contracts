@@ -66,7 +66,9 @@ contract GryphNamespaces is ERC721Base, Ownable, ReentrancyGuard {
   /**
    * @dev Sets the erc721 required fields
    */
-  constructor() ERC721Base("Gryph Namespaces", "GNS") {}
+  constructor(string memory uri) ERC721Base("Gryph Namespaces", "GNS") {
+    _setContractURI(uri);
+  }
 
   // ============ Read Methods ============
 

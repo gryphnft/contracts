@@ -1,0 +1,8 @@
+{
+  "name": "GRY.PH Namespaces",
+  "description": "Reserve your collection and profile name on a crosschain NFT marketplace. Get a subdomain at GRY.PH",
+  "image": "https://gry.ph/images/gryph-8bit-7.png",
+  "external_link": "https://gry.ph/gns",
+  "seller_fee_basis_points": 1000, 
+  "fee_recipient": "0x469A288F790998E48C4869360FB60038F4d5fd48"
+}
