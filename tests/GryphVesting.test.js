@@ -52,7 +52,8 @@ describe('GryphVesting Tests', function () {
     this.contracts.treasury = await deploy('GryphTreasury')
     this.contracts.economy = await deploy(
       'GryphEconomy', 
-      this.contracts.token.address
+      this.contracts.token.address,
+      this.contracts.treasury.address
     )
     this.contracts.vesting = await deploy(
       'GryphVesting', 

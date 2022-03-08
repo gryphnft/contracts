@@ -53,6 +53,8 @@ contract GryphEconomy is
 
   //this is the contract address for $GRYPH
   IERC20Capped public immutable GRYPH_TOKEN;
+  //this is the contract address for the $GRYPH treasury
+  address public immutable GRYPH_TREASURY;
   //this is the token cap of $GRYPH
   uint256 public immutable TOKEN_CAP;
 
@@ -71,13 +73,15 @@ contract GryphEconomy is
    * @dev Grants `DEFAULT_ADMIN_ROLE` to the account that deploys the 
    * contract.
    */
-  constructor(IERC20Capped token) payable {
+  constructor(IERC20Capped token, address treasury) payable {
     //set up roles for the contract creator
     address sender = _msgSender();
     _setupRole(DEFAULT_ADMIN_ROLE, sender);
     _setupRole(PAUSER_ROLE, sender);
-    //set the token address
+    //set the $GRYPH addresses
     GRYPH_TOKEN = token;
+    GRYPH_TREASURY = treasury;
+    //set the token cap
     TOKEN_CAP = token.cap();
     //start paused
     _pause();
@@ -118,16 +122,14 @@ contract GryphEconomy is
    * @dev Returns the ether amount we are willing to buy $GRYPH for
    */
   function buyingFor(uint256 amount) public view returns(uint256) {
-    // (eth / cap) * amount
-    return balanceEther().mul(amount).div(TOKEN_CAP).mul(_buyFor).div(1000);
+    return _buyingFor(amount, balanceEther());
   }
 
   /**
    * @dev Returns the ether amount we are willing to sell $GRYPH for
    */
   function sellingFor(uint256 amount) public view returns(uint256) {
-    // (eth / cap) * amount
-    return balanceEther().mul(amount).div(TOKEN_CAP).mul(_sellFor).div(1000);
+    return _sellingFor(amount, balanceEther());
   }
 
   // ============ Write Methods ============
@@ -138,7 +140,7 @@ contract GryphEconomy is
   function buy(address recipient, uint256 amount) 
     public payable whenNotPaused nonReentrant
   {
-    uint256 value = buyingFor(amount);
+    uint256 value = _sellingFor(amount, balanceEther() - msg.value);
     if (value == 0 
       || msg.value < value
       || balanceToken() < amount
@@ -146,21 +148,27 @@ contract GryphEconomy is
     //we already received the ether
     //so just send the tokens
     SafeERC20.safeTransfer(GRYPH_TOKEN, recipient, amount);
+    //send the interest
+    Address.sendValue(
+      payable(GRYPH_TREASURY),
+      msg.value.mul(_interest).div(10000)
+    );
     emit ERC20Sent(recipient, amount);
   }
 
   /**
    * @dev Sells `amount` of $GRYPH 
    */
-  function sell(uint256 amount) public whenNotPaused nonReentrant {
-    address recipient = _msgSender();
+  function sell(address recipient, uint256 amount) 
+    public whenNotPaused nonReentrant 
+  {
     //check allowance
     if(GRYPH_TOKEN.allowance(recipient, address(this)) < amount) 
       revert InvalidAmount();
+    //send the ether
+    Address.sendValue(payable(recipient), buyingFor(amount));
     //now accept the payment
     SafeERC20.safeTransferFrom(GRYPH_TOKEN, recipient, address(this), amount);
-    //send the ether
-    Address.sendValue(payable(recipient), sellingFor(amount));
     emit ERC20Received(recipient, amount);
   }
 
@@ -205,5 +213,22 @@ contract GryphEconomy is
    */
   function unpause() public virtual onlyRole(PAUSER_ROLE) {
     _unpause();
+  }
+
+  // ============ Internal Methods ============
+  /**
+   * @dev Returns the ether amount we are willing to buy $GRYPH for
+   */
+  function _buyingFor(uint256 amount, uint256 balance) internal view returns(uint256) {
+    // (eth / cap) * amount
+    return balance.mul(amount).mul(_buyFor).div(TOKEN_CAP).div(1000);
+  }
+
+  /**
+   * @dev Returns the ether amount we are willing to sell $GRYPH for
+   */
+  function _sellingFor(uint256 amount, uint256 balance) internal view returns(uint256) {
+    // (eth / cap) * amount
+    return balance.mul(amount).mul(_sellFor).div(TOKEN_CAP).div(1000);
   }
 }
