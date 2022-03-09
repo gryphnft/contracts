@@ -11,7 +11,7 @@ async function main() {
   const nft = await NFT.deploy(uri)
   await nft.deployed()
   console.log('NFT contract deployed to (update .env):', nft.address)
-  console.log('npx hardhat verify --network', hardhat.config.defaultNetwork, nft.address)
+  console.log('npx hardhat verify --network', hardhat.config.defaultNetwork, nft.address, `"${uri}"`)
 }
 
 // We recommend this pattern to be able to use async/await everywhere
@@ -21,5 +21,5 @@ main().then(() => process.exit(0)).catch(error => {
   process.exit(1)
 });
 
-//$ npx hardhat verify --network testnet 0x5773Fe8CE26FAA9F6d9EeD99283188141C341d4C
+//$ npx hardhat verify --network testnet 0xCFe522301C7246401387003156dFb7cd4826Bd3b "https://ipfs.io/ipfs/bafkreicw32mefimobvabviirb7rao45r3kpy5zdudiputyubcmp2gag4xa"
 //$ npx hardhat verify --network mainnet 
