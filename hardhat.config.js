@@ -1,12 +1,13 @@
-require("@nomiclabs/hardhat-etherscan");
-require("@nomiclabs/hardhat-waffle");
-require("hardhat-contract-sizer");
-require("hardhat-gas-reporter");
+require('@openzeppelin/hardhat-upgrades');
+require('@nomiclabs/hardhat-etherscan');
+require('@nomiclabs/hardhat-waffle');
+require('hardhat-contract-sizer');
+require('hardhat-gas-reporter');
 require('dotenv').config();
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
-task("accounts", "Prints the list of accounts", async () => {
+task('accounts', 'Prints the list of accounts', async () => {
   const accounts = await ethers.getSigners();
 
   for (const account of accounts) {
@@ -32,7 +33,7 @@ module.exports = {
       }
     },
     localhost: {
-      url: "http://127.0.0.1:8545",
+      url: 'http://127.0.0.1:8545',
       accounts: [process.env.BLOCKCHAIN_LOCALHOST_PRIVATE_KEY],
       contracts: {
         namespaces: process.env.BLOCKCHAIN_LOCALHOST_NAMESPACE_ADDRESS,
@@ -43,7 +44,7 @@ module.exports = {
       }
     },
     testnet: {
-      url: "https://rinkeby.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
+      url: 'https://rinkeby.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161',
       accounts: [process.env.BLOCKCHAIN_TESTNET_PRIVATE_KEY],
       contracts: {
         namespaces: process.env.BLOCKCHAIN_TESTNET_NAMESPACE_ADDRESS,
@@ -54,7 +55,7 @@ module.exports = {
       }
     },
     mainnet: {
-      url: "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
+      url: 'https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161',
       accounts: [process.env.BLOCKCHAIN_MAINNET_PRIVATE_KEY],
       contracts: {
         namespaces: process.env.BLOCKCHAIN_MAINNET_NAMESPACE_ADDRESS,
@@ -66,7 +67,7 @@ module.exports = {
     },
   },
   solidity: {
-    version: "0.8.9",
+    version: '0.8.9',
     settings: {
       optimizer: {
         enabled: true,
@@ -75,10 +76,10 @@ module.exports = {
     }
   },
   paths: {
-    sources: "./contracts",
-    tests: "./tests",
-    cache: "./cache",
-    artifacts: "./artifacts"
+    sources: './contracts',
+    tests: './tests',
+    cache: './cache',
+    artifacts: './artifacts'
   },
   mocha: {
     timeout: 20000

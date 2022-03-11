@@ -2,15 +2,15 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
 
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/IERC721MetadataUpgradeable.sol";
 
-import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/utils/Context.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
 
 error BalanceQueryZeroAddress();
 error ExistentToken();
@@ -24,16 +24,17 @@ error InvalidAmount();
 error ERC721ReceiverNotReceived();
 error TransferFromNotOwner();
 
-abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata {
-  using Address for address;
-  using Strings for uint256;
+abstract contract ERC721 is 
+  ContextUpgradeable, 
+  ERC165Upgradeable, 
+  IERC721Upgradeable, 
+  IERC721MetadataUpgradeable 
+{
+  using AddressUpgradeable for address;
+  using StringsUpgradeable for uint256;
 
   // ============ Storage ============
 
-  // Token name
-  string private _name;
-  // Token symbol
-  string private _symbol;
   // Total supply
   uint256 private _totalSupply;
 
@@ -61,17 +62,6 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata {
     _;
   }
 
-  // ============ Deploy ============
-
-  /**
-   * @dev Initializes the contract by setting a `name` and a `symbol` 
-   * to the token collection.
-   */
-  constructor(string memory name_, string memory symbol_) {
-    _name = name_;
-    _symbol = symbol_;
-  }
-
   // ============ Read Methods ============
 
   /**
@@ -82,13 +72,6 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata {
   {
     if (owner == address(0)) revert BalanceQueryZeroAddress();
     return _balances[owner];
-  }
-
-  /**
-   * @dev See {IERC721Metadata-name}.
-   */
-  function name() public view virtual override returns(string memory) {
-    return _name;
   }
 
   /**
@@ -104,19 +87,16 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata {
    * @dev See {IERC165-supportsInterface}.
    */
   function supportsInterface(bytes4 interfaceId) 
-    public view virtual override(ERC165, IERC165) returns(bool) 
+    public 
+    view 
+    virtual 
+    override(ERC165Upgradeable, IERC165Upgradeable) 
+    returns(bool) 
   {
     return
-      interfaceId == type(IERC721).interfaceId ||
-      interfaceId == type(IERC721Metadata).interfaceId ||
+      interfaceId == type(IERC721Upgradeable).interfaceId ||
+      interfaceId == type(IERC721Upgradeable).interfaceId ||
       super.supportsInterface(interfaceId);
-  }
-
-  /**
-   * @dev See {IERC721Metadata-symbol}.
-   */
-  function symbol() public view virtual override returns(string memory) {
-    return _symbol;
   }
   
   /**
@@ -287,10 +267,10 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata {
     uint256 tokenId,
     bytes memory _data
   ) private returns (bool) {
-    try IERC721Receiver(to).onERC721Received(
+    try IERC721ReceiverUpgradeable(to).onERC721Received(
       _msgSender(), from, tokenId, _data
     ) returns (bytes4 retval) {
-      return retval == IERC721Receiver.onERC721Received.selector;
+      return retval == IERC721ReceiverUpgradeable.onERC721Received.selector;
     } catch (bytes memory reason) {
       if (reason.length == 0) {
         revert NotERC721Receiver();

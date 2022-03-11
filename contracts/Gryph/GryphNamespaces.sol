@@ -2,15 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
-import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-
-import "../ERC721/ERC721Base.sol";
+import "../ERC721/ERC721Upgradable.sol";
 import "../utils/Base64.sol";
 
 //
@@ -30,49 +22,61 @@ import "../utils/Base64.sol";
 error InvalidName();
 error InvalidAmountSent();
 
-contract GryphNamespaces is ERC721Base, Ownable, ReentrancyGuard {
-  using Strings for uint16;
-  using Counters for Counters.Counter;
+contract GryphNamespaces is 
+  OwnableUpgradeable, 
+  ReentrancyGuardUpgradeable,
+  ERC721Upgradable
+{
+  using StringsUpgradeable for uint16;
 
   // ============ Storage ============
 
-  Counters.Counter private _tokenIdTracker;
-  
   //mapping of token id to name
-  mapping(uint256 => string) public tokenName;
-
-  //mapping of name to token id
-  mapping(string => uint256) public reserved;
+  mapping(uint256 => string) private _registry;
 
   //mapping of names to blacklist
   mapping(string => bool) public blacklisted;
 
-  string private _baseURI;
-
   // ============ Deploy ============
 
   /**
-   * @dev Sets the erc721 required fields
+   * @dev Sets contract URI
    */
-  constructor(string memory uri) ERC721Base("Gryph Namespaces", "GNS") {
+  function initialize(string memory uri) public initializer {
+    __Ownable_init();
+    __ReentrancyGuard_init();
     _setContractURI(uri);
   }
 
   // ============ Read Methods ============
 
   /**
+   * @dev See {IERC721Metadata-name}.
+   */
+  function name() external pure returns(string memory) {
+    return "Gryph Namespaces";
+  }
+
+  /**
+   * @dev See {IERC721Metadata-symbol}.
+   */
+  function symbol() external pure returns(string memory) {
+    return "GNS";
+  }
+
+  /**
    * @dev See {IERC721Metadata-tokenURI}.
    */
   function tokenURI(uint256 tokenId) public view returns(string memory) {
     if(!_exists(tokenId)) revert NonExistentToken();
-    string memory name = tokenName[tokenId];
+    string memory namespace = _registry[tokenId];
     return string(
       abi.encodePacked(
         "data:application/json;base64,",
         Base64.encode(bytes(abi.encodePacked(
-          '{"name":"', name, '.gry.ph",',
+          '{"name":"', namespace, '.gry.ph",',
           '"description": "', _description(), '",',
-          '"image":"data:image/svg+xml;base64,', _svg64(name), '"}'
+          '"image":"data:image/svg+xml;base64,', _svg64(namespace), '"}'
         )))
       )
     );
@@ -83,9 +87,11 @@ contract GryphNamespaces is ERC721Base, Ownable, ReentrancyGuard {
   /**
    * @dev Allows anyone to buy a name
    */
-  function buy(address recipient, string memory name) external payable {
+  function buy(address recipient, string memory namespace) 
+    external payable 
+  {
     //get the length of name
-    uint256 length = bytes(name).length;
+    uint256 length = bytes(namespace).length;
     //disallow length length less than 4
     if (length < 4) revert InvalidName();
     //get prices
@@ -98,18 +104,24 @@ contract GryphNamespaces is ERC721Base, Ownable, ReentrancyGuard {
     //check price
     if (msg.value < prices[index]) revert InvalidAmountSent();
     //okay to mint
-    _nameMint(recipient, name);
+    _nameMint(recipient, namespace);
   }
 
   // ============ Admin Methods ============
 
   /**
-   * @dev Disallows `names`
+   * @dev Assigns a name to a new owner. This would only ever be called  
+   * if there was a reported breach of a trademark
+   */
+  function assign(uint256 tokenId, address recipient) public onlyOwner {
+    _transfer(ownerOf(tokenId), recipient, tokenId);
+  }
+
+  /**
+   * @dev Disallows `names` to be minted
    */
   function blacklist(string[] memory names) public onlyOwner {
     for (uint256 i = 0; i < names.length; i++) {
-      //we can't blacklist if the name is already reserved
-      if (reserved[names[i]] > 0) revert InvalidName();
       blacklisted[names[i]] = true;
     }
   }
@@ -117,15 +129,10 @@ contract GryphNamespaces is ERC721Base, Ownable, ReentrancyGuard {
   /**
    * @dev Allow admin to mint a name without paying (used for airdrops)
    */
-  function mint(address recipient, string memory name) public onlyOwner {
-    _nameMint(recipient, name);
-  }
-
-  /**
-   * @dev Updates the base token uri
-   */
-  function setBaseURI(string memory uri) public onlyOwner {
-    _baseURI = uri;
+  function mint(address recipient, string memory namespace) 
+    public onlyOwner 
+  {
+    _nameMint(recipient, namespace);
   }
 
   /**
@@ -143,22 +150,22 @@ contract GryphNamespaces is ERC721Base, Ownable, ReentrancyGuard {
   function withdraw(address recipient) 
     external virtual nonReentrant onlyOwner
   {
-    Address.sendValue(payable(recipient), address(this).balance);
+    AddressUpgradeable.sendValue(payable(recipient), address(this).balance);
   }
 
   /**
    * @dev This contract should not hold any tokens in the first place. 
    * This method exists to transfer out tokens funds.
    */
-  function withdraw(IERC20 erc20, address recipient, uint256 amount) 
+  function withdraw(IERC20Upgradeable erc20, address recipient, uint256 amount) 
     external virtual nonReentrant onlyOwner
   {
-    SafeERC20.safeTransfer(erc20, recipient, amount);
+    SafeERC20Upgradeable.safeTransfer(erc20, recipient, amount);
   }
 
-  // ============ Internal Methods ============
+  // ============ Private Methods ============
 
-  function _prices() internal pure returns(uint64[7] memory) {
+  function _prices() private pure returns(uint64[7] memory) {
     return [
       0.192 ether, //4 letters
       0.096 ether, //5 letters
@@ -170,11 +177,11 @@ contract GryphNamespaces is ERC721Base, Ownable, ReentrancyGuard {
     ];
   }
 
-  function _description() internal pure returns(string memory) {
-    return "GRY.PH is a cross chain NFT marketplace. Holders of this collection namespace have the rights to customize its contents";
+  function _description() private pure returns(string memory) {
+    return "GRY.PH is a cross chain NFT marketplace. Holders of this collection namespace have the rights to customize the content available.";
   }
 
-  function _grid() internal pure returns(uint16[5][73] memory) {
+  function _grid() private pure returns(uint16[5][73] memory) {
     return [
       [uint16(25), 25, 13, 125, 0],
       [uint16(50), 25, 38, 100, 0],
@@ -252,7 +259,7 @@ contract GryphNamespaces is ERC721Base, Ownable, ReentrancyGuard {
     ];
   }
 
-  function _svg64(string memory name) internal pure returns(string memory) {
+  function _svg64(string memory namespace) private pure returns(string memory) {
     bytes memory svg = abi.encodePacked(
       '<svg width="475" height="475" xmlns="http://www.w3.org/2000/svg"><g><rect height="475" width="475" fill="#ffffff"/>'
     );
@@ -277,26 +284,22 @@ contract GryphNamespaces is ERC721Base, Ownable, ReentrancyGuard {
 
     svg = abi.encodePacked(svg,
       '<text font-family="', "'Courier New'", '" font-weight="bold" font-size="30" y="60%" x="50%" fill="#444" dominant-baseline="middle" text-anchor="middle">gry.ph</text>',
-      '<text id="name" font-family="', "'Courier New'", '" font-weight="bold" font-size="30" y="50%" x="50%" fill="#000" dominant-baseline="middle" text-anchor="middle">', name,'</text>',
+      '<text id="name" font-family="', "'Courier New'", '" font-weight="bold" font-size="30" y="50%" x="50%" fill="#000" dominant-baseline="middle" text-anchor="middle">', namespace,'</text>',
       '</g></svg>'
     );
 
     return Base64.encode(svg);
   }
 
-  function _nameMint(address recipient, string memory name) internal {
-    //already reserved or blacklisted
-    if (reserved[name] > 0 || blacklisted[name]) revert InvalidName();
-    // We cannot just use balanceOf to create the new tokenId because tokens
-    // can be burned (destroyed), so we need a separate counter.
-    // first increment
-    _tokenIdTracker.increment();
-    //get token id
-    uint256 tokenId = _tokenIdTracker.current();
+  function _nameMint(address recipient, string memory namespace) private {
+    //if blacklisted
+    if (blacklisted[namespace]) revert InvalidName();
+    //determine token id from name
+    bytes32 nameHash = keccak256(abi.encodePacked(namespace));
+    if (nameHash.length < 32) revert InvalidName();
+    uint256 tokenId = uint256(nameHash);
     //now mint
     _safeMint(recipient, tokenId);
-    //now add name
-    tokenName[tokenId] = name;
-    reserved[name] = tokenId;
+    _registry[tokenId] = namespace;
   }
 }

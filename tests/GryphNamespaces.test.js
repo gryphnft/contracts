@@ -9,7 +9,11 @@ if (process.env.BLOCKCHAIN_NETWORK != 'hardhat') {
 async function deploy(name, ...params) {
   //deploy the contract
   const ContractFactory = await ethers.getContractFactory(name)
-  const contract = await ContractFactory.deploy(...params)
+  const contract = await upgrades.deployProxy(
+    ContractFactory, 
+    params, 
+    { initializer: 'initialize'}
+  )
   await contract.deployed()
 
   return contract
@@ -30,6 +34,11 @@ async function getSigners(name, ...params) {
   return signers
 }
 
+function getTokenId(name) {
+  const labelHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(name))
+  return ethers.BigNumber.from(labelHash).toString()
+}
+
 describe('GryphNamespaces Tests', function () {
   before(async function() {
     const [ 
@@ -38,8 +47,6 @@ describe('GryphNamespaces Tests', function () {
       holder2
     ] = await getSigners('GryphNamespaces', 'https://ipfs.io/ipfs/bafkreicw32mefimobvabviirb7rao45r3kpy5zdudiputyubcmp2gag4xa')
 
-    await owner.withContract.setBaseURI('http://localhost:3000')
-    
     this.signers = {
       owner, 
       holder1, 
@@ -50,14 +57,12 @@ describe('GryphNamespaces Tests', function () {
   it('Should mint', async function () {
     const { owner, holder1 } = this.signers
     await owner.withContract.mint(holder1.address, 'test')
-    expect(await owner.withContract.tokenURI(1)).to.contain('data:application/json;base64,')
-    expect(await owner.withContract.tokenName(1)).to.equal('test')
-    expect(await owner.withContract.reserved('test')).to.equal(1)
+    let tokenId = getTokenId('test')
+    expect(await owner.withContract.tokenURI(tokenId)).to.contain('data:application/json;base64,')
 
     await owner.withContract.mint(holder1.address, 'a')
-    expect(await owner.withContract.tokenURI(2)).to.contain('data:application/json;base64,')
-    expect(await owner.withContract.tokenName(2)).to.equal('a')
-    expect(await owner.withContract.reserved('a')).to.equal(2)
+    tokenId = getTokenId('a')
+    expect(await owner.withContract.tokenURI(tokenId)).to.contain('data:application/json;base64,')
   })
 
   it('Should not mint', async function () {
@@ -65,7 +70,7 @@ describe('GryphNamespaces Tests', function () {
 
     await expect(
       owner.withContract.mint(holder1.address, 'test')
-    ).to.revertedWith('InvalidName()')
+    ).to.revertedWith('ExistentToken()')
   })
 
   it('Should buy', async function () {
@@ -75,63 +80,56 @@ describe('GryphNamespaces Tests', function () {
       'abcd', 
       { value: ethers.utils.parseEther('0.192') }
     )
-    expect(await owner.withContract.tokenURI(3)).to.contain('data:application/json;base64,')
-    expect(await owner.withContract.tokenName(3)).to.equal('abcd')
-    expect(await owner.withContract.reserved('abcd')).to.equal(3)
+    let tokenId = getTokenId('abcd')
+    expect(await owner.withContract.tokenURI(tokenId)).to.contain('data:application/json;base64,')
 
     owner.withContract.buy(
       holder1.address, 
       'abcde', 
       { value: ethers.utils.parseEther('0.096') }
     )
-    expect(await owner.withContract.tokenURI(4)).to.contain('data:application/json;base64,')
-    expect(await owner.withContract.tokenName(4)).to.equal('abcde')
-    expect(await owner.withContract.reserved('abcde')).to.equal(4)
+    tokenId = getTokenId('abcde')
+    expect(await owner.withContract.tokenURI(tokenId)).to.contain('data:application/json;base64,')
 
     owner.withContract.buy(
       holder1.address, 
       'abcdef', 
       { value: ethers.utils.parseEther('0.048') }
     )
-    expect(await owner.withContract.tokenURI(5)).to.contain('data:application/json;base64,')
-    expect(await owner.withContract.tokenName(5)).to.equal('abcdef')
-    expect(await owner.withContract.reserved('abcdef')).to.equal(5)
+    tokenId = getTokenId('abcdef')
+    expect(await owner.withContract.tokenURI(tokenId)).to.contain('data:application/json;base64,')
 
     owner.withContract.buy(
       holder1.address, 
       'abcdefg', 
       { value: ethers.utils.parseEther('0.024') }
     )
-    expect(await owner.withContract.tokenURI(6)).to.contain('data:application/json;base64,')
-    expect(await owner.withContract.tokenName(6)).to.equal('abcdefg')
-    expect(await owner.withContract.reserved('abcdefg')).to.equal(6)
+    tokenId = getTokenId('abcdefg')
+    expect(await owner.withContract.tokenURI(tokenId)).to.contain('data:application/json;base64,')
 
     owner.withContract.buy(
       holder1.address, 
       'abcdefgh', 
       { value: ethers.utils.parseEther('0.012') }
     )
-    expect(await owner.withContract.tokenURI(7)).to.contain('data:application/json;base64,')
-    expect(await owner.withContract.tokenName(7)).to.equal('abcdefgh')
-    expect(await owner.withContract.reserved('abcdefgh')).to.equal(7)
+    tokenId = getTokenId('abcdefgh')
+    expect(await owner.withContract.tokenURI(tokenId)).to.contain('data:application/json;base64,')
 
     owner.withContract.buy(
       holder1.address, 
       'abcdefghi', 
       { value: ethers.utils.parseEther('0.006') }
     )
-    expect(await owner.withContract.tokenURI(8)).to.contain('data:application/json;base64,')
-    expect(await owner.withContract.tokenName(8)).to.equal('abcdefghi')
-    expect(await owner.withContract.reserved('abcdefghi')).to.equal(8)
+    tokenId = getTokenId('abcdefghi')
+    expect(await owner.withContract.tokenURI(tokenId)).to.contain('data:application/json;base64,')
 
     owner.withContract.buy(
       holder1.address, 
       'abcdefghij', 
       { value: ethers.utils.parseEther('0.003') }
     )
-    expect(await owner.withContract.tokenURI(9)).to.contain('data:application/json;base64,')
-    expect(await owner.withContract.tokenName(9)).to.equal('abcdefghij')
-    expect(await owner.withContract.reserved('abcdefghij')).to.equal(9)
+    tokenId = getTokenId('abcdefghij')
+    expect(await owner.withContract.tokenURI(tokenId)).to.contain('data:application/json;base64,')
   })
 
   it('Should not buy', async function () {
@@ -143,7 +141,7 @@ describe('GryphNamespaces Tests', function () {
         'test', 
         { value: ethers.utils.parseEther('0.192') }
       )
-    ).to.revertedWith('InvalidName()')
+    ).to.revertedWith('ExistentToken()')
 
     await expect(
       owner.withContract.buy(
@@ -159,26 +157,12 @@ describe('GryphNamespaces Tests', function () {
         'abcd', 
         { value: ethers.utils.parseEther('0.192') }
       )
-    ).to.revertedWith('InvalidName()')
+    ).to.revertedWith('ExistentToken()')
   })
 
   it('Should blacklist', async function () {
     const { owner, holder1 } = this.signers
     await owner.withContract.blacklist(['mint'])
-    await expect(
-      owner.withContract.buy(
-        holder1.address, 
-        'mint', 
-        { value: ethers.utils.parseEther('0.192') }
-      )
-    ).to.revertedWith('InvalidName()')
-  })
-
-  it('Should not blacklist', async function () {
-    const { owner, holder1 } = this.signers
-    await expect(
-      owner.withContract.blacklist(['abcd'])
-    ).to.revertedWith('InvalidName()')
   })
   
   it('Should whitelist', async function () {
@@ -190,8 +174,7 @@ describe('GryphNamespaces Tests', function () {
       'mint', 
       { value: ethers.utils.parseEther('0.192') }
     )
-    expect(await owner.withContract.tokenURI(10)).to.contain('data:application/json;base64,')
-    expect(await owner.withContract.tokenName(10)).to.equal('mint')
-    expect(await owner.withContract.reserved('mint')).to.equal(10)
+    let tokenId = getTokenId('abcd')
+    expect(await owner.withContract.tokenURI(tokenId)).to.contain('data:application/json;base64,')
   })
 })

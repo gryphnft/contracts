@@ -8,7 +8,7 @@ const uri = 'https://ipfs.io/ipfs/bafkreicw32mefimobvabviirb7rao45r3kpy5zdudiput
 async function main() {
   await hre.run('compile')
   const NFT = await hardhat.ethers.getContractFactory('GryphNamespaces')
-  const nft = await NFT.deploy(uri)
+  const nft = await hardhat.upgrades.deployProxy(NFT, [uri], { initializer: 'initialize'})
   await nft.deployed()
   console.log('NFT contract deployed to (update .env):', nft.address)
   console.log('npx hardhat verify --network', hardhat.config.defaultNetwork, nft.address, `"${uri}"`)
