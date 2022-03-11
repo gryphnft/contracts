@@ -3,15 +3,22 @@
 
 const hardhat = require('hardhat')
 
+const { getImplementationAddress } = require('@openzeppelin/upgrades-core')
+
 const uri = 'https://ipfs.io/ipfs/bafkreicw32mefimobvabviirb7rao45r3kpy5zdudiputyubcmp2gag4xa'
 
 async function main() {
   await hre.run('compile')
-  const NFT = await hardhat.ethers.getContractFactory('GryphNamespaces')
-  const nft = await hardhat.upgrades.deployProxy(NFT, [uri], { initializer: 'initialize'})
-  await nft.deployed()
-  console.log('NFT contract deployed to (update .env):', nft.address)
-  console.log('npx hardhat verify --network', hardhat.config.defaultNetwork, nft.address, `"${uri}"`)
+  const Upgradeable = await hardhat.ethers.getContractFactory('GryphNamespaces')
+  const proxy = await hardhat.upgrades.deployProxy(Upgradeable, [uri], { initializer: 'initialize'})
+  await proxy.deployed()
+
+  const network = hardhat.config.networks[hardhat.config.defaultNetwork]
+  const provider = new hardhat.ethers.providers.JsonRpcProvider(network.url)
+  const implementation = await getImplementationAddress(provider, proxy.address);
+
+  console.log('Proxy contract deployed to (update .env):', proxy.address)
+  console.log('npx hardhat verify --network', hardhat.config.defaultNetwork, implementation, `"${uri}"`)
 }
 
 // We recommend this pattern to be able to use async/await everywhere
