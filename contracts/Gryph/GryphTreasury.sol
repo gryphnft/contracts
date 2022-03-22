@@ -20,6 +20,8 @@ import "@openzeppelin/contracts/access/AccessControlEnumerable.sol";
 //  https://www.gry.ph/
 //
 
+error InvalidCall();
+
 contract GryphTreasury is 
   Context, 
   Pausable, 
@@ -88,8 +90,8 @@ contract GryphTreasury is
     _setupRole(REQUESTER_ROLE, sender);
     _setupRole(DEFAULT_ADMIN_ROLE, sender);
     //hard code tiers
-    //0.05 ETH - 1 approver - 1 day
-    approvalTiers[1] = Approval(0.05 ether, 1, 86400, 0);
+    //0.05 ETH - 2 approvers - 1 day
+    approvalTiers[1] = Approval(0.05 ether, 2, 86400, 0);
     //0.50 ETH - 2 approvers - 3 days
     approvalTiers[2] = Approval(0.5 ether, 2, 259200, 0);
     //5.00 ETH - 3 approvers - 7 days
@@ -142,17 +144,18 @@ contract GryphTreasury is
    * @dev Approves a transaction
    */
   function approve(uint256 id) public virtual onlyRole(APPROVER_ROLE) {
-    require(!paused(), "Approving is paused");
-    //check if tx exists
-    require(txs[id].amount > 0, "Request does not exist");
-    //check if cancelled
-    require(!txs[id].cancelled, "Request is cancelled");
-    //check if withdrawn
-    require(!txs[id].withdrawn, "Transaction already withdrawn");
+    if (paused()
+      //check if tx exists
+      || txs[id].amount == 0
+      //check if cancelled
+      || txs[id].cancelled
+      //check if withdrawn
+      || txs[id].withdrawn
+    ) revert InvalidCall();
 
     address sender = _msgSender();
     //require approver didnt already approve
-    require(!txs[id].approved[sender], "Approver has already approved");
+    if(txs[id].approved[sender]) revert InvalidCall();
     //add to the approval
     txs[id].approvals += 1; 
     txs[id].approved[sender] = true;
@@ -170,13 +173,15 @@ contract GryphTreasury is
    * @dev Cancels a transaction request
    */
   function cancel(uint256 id) public virtual onlyRole(REQUESTER_ROLE) {
-    require(!paused(), "Approving is paused");
-    //check if tx exists
-    require(txs[id].amount > 0, "Request does not exist");
-    //check if cancelled
-    require(!txs[id].cancelled, "Request is already cancelled");
-    //check if approved
-    require(txs[id].approvals == 0, "Already in the approval process");
+    if (paused()
+      //check if tx exists
+      || txs[id].amount == 0
+      //check if cancelled
+      || txs[id].cancelled
+      //check if approvals
+      || txs[id].approvals > 0
+    ) revert InvalidCall();
+
     //okay cancel it
     txs[id].cancelled = true;
     //update the cooldown
@@ -201,25 +206,24 @@ contract GryphTreasury is
     uint256 amount,
     string memory uri
   ) public virtual onlyRole(REQUESTER_ROLE) {
-    //check paused
-    require(!paused(), "Requesting is paused");
-    //check if amount is less than the balance
-    require(amount <= address(this).balance, "Not enough funds");
-    //check to see if tx exists
-    require(txs[id].amount == 0, "Transaction exists");
-    //check for valud address
-    require(
-      beneficiary != address(0) && beneficiary != address(this), 
-      "Invalid beneficiary"
-    );
+    if (paused()
+      //check if amount is more than the balance
+      || amount > address(this).balance
+      //check to see if tx exists
+      || txs[id].amount > 0
+      //check for valid address
+      || beneficiary == address(0) 
+      || beneficiary == address(this)
+    ) revert InvalidCall();
+
     //what tier level is this?
     uint8 level = tier(amount);
     //check to see if a tier is found
-    require(approvalTiers[level].max > 0, "Request amount is too large");
+    if(approvalTiers[level].max == 0) revert InvalidCall();
     //get the time now
     uint64 timenow = uint64(block.timestamp);
     //the time should be greater than the last approved plus the cooldown
-    require(timenow >= approvalTiers[level].next, "Tiered amount on cooldown");
+    if(timenow < approvalTiers[level].next) revert InvalidCall();
 
     //create a new tx
     txs[id].uri = uri;
@@ -252,13 +256,14 @@ contract GryphTreasury is
    */
   function withdraw(uint256 id) external nonReentrant {
     //check for approved funds
-    require(txs[id].amount > 0, "Funds do not exist");
-    //check to see if withdrawn already
-    require(!txs[id].withdrawn, "Funds are already withdrawn");
-    //check if amount is less than the balance
-    require(txs[id].amount <= address(this).balance, "Not enough funds");
-    //is it even approved?
-    require(isApproved(id), "Request is not approved");
+    if (txs[id].amount == 0
+      //check to see if withdrawn already
+      || txs[id].withdrawn
+      //check if amount is less than the balance
+      || txs[id].amount > address(this).balance
+      //is it even approved?
+      || !isApproved(id)
+    ) revert InvalidCall();
 
     //go ahead and transfer it
     txs[id].withdrawn = true;

@@ -160,21 +160,21 @@ describe('GryphTreasury Tests', function () {
     const { requester, receiver } = this.signers
     await expect(
       requester.withContract.request(1, receiver.address, ethers.utils.parseEther('0.5'), this.txURI)
-    ).to.be.revertedWith("Transaction exists")
+    ).to.be.revertedWith('InvalidCall()')
   })
 
   it('Should not allow more than 20 eth', async function() {
     const { requester, receiver } = this.signers
     await expect(
       requester.withContract.request(3, receiver.address, ethers.utils.parseEther('20.01'), this.txURI)
-    ).to.be.revertedWith('Request amount is too large')
+    ).to.be.revertedWith('InvalidCall()')
   })
 
   it('Should error when requesting in a cooldown', async function() {
     const { requester, receiver } = this.signers
     await expect(
       requester.withContract.request(3, receiver.address, ethers.utils.parseEther('0.05'), this.txURI)
-    ).to.be.revertedWith("Tiered amount on cooldown")
+    ).to.be.revertedWith('InvalidCall()')
   })
 
   it('Should approve', async function() {
@@ -217,14 +217,14 @@ describe('GryphTreasury Tests', function () {
     const { approver1 } = this.signers
     await expect(
       approver1.withContract.approve(10)
-    ).to.be.revertedWith('Request does not exist')
+    ).to.be.revertedWith('InvalidCall()')
   })
 
   it('Should not allow duplicate approving', async function() {
     const { approver1 } = this.signers
     await expect(
       approver1.withContract.approve(1)
-    ).to.be.revertedWith('Approver has already approved')
+    ).to.be.revertedWith('InvalidCall()')
   })
 
   it('Should withdraw', async function() {
@@ -253,7 +253,7 @@ describe('GryphTreasury Tests', function () {
 
   it('Should not allow approving already withdrawn tx', async function() {
     const { approver4 } = this.signers
-    await expect(approver4.withContract.approve(1)).to.be.revertedWith('Transaction already withdrawn')
+    await expect(approver4.withContract.approve(1)).to.be.revertedWith('InvalidCall()')
   })
 
   it('Should not allow requests passed the available funds in the contract', async function() {
@@ -264,7 +264,7 @@ describe('GryphTreasury Tests', function () {
         ethers.utils.parseEther('20'), 
         this.txURI
       )
-    ).to.be.revertedWith('Not enough funds')
+    ).to.be.revertedWith('InvalidCall()')
   })
 
   it('Should be able to cancel request', async function() {
@@ -318,6 +318,6 @@ describe('GryphTreasury Tests', function () {
     
     await expect(
       owner.withContract.withdraw(4)
-    ).to.be.revertedWith('Not enough funds')
+    ).to.be.revertedWith('InvalidCall()')
   })
 })

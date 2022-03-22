@@ -29,6 +29,13 @@ contract GryphNamespaces is
 {
   using StringsUpgradeable for uint16;
 
+  // ============ Constants ============
+
+  //royalty percent
+  uint256 private constant _ROYALTY_PERCENT = 500;
+  //bytes4(keccak256("royaltyInfo(uint256,uint256)")) == 0x2a55205a
+  bytes4 private constant _INTERFACE_ID_ERC2981 = 0x2a55205a;
+
   // ============ Storage ============
 
   //mapping of token id to name
@@ -42,7 +49,9 @@ contract GryphNamespaces is
   /**
    * @dev Sets contract URI
    */
-  function initialize(string memory uri) public initializer {
+  function initialize(string memory uri) 
+    public initializer 
+  {
     __Ownable_init();
     __ReentrancyGuard_init();
     _setContractURI(uri);
@@ -55,6 +64,37 @@ contract GryphNamespaces is
    */
   function name() external pure returns(string memory) {
     return "Gryph Namespaces";
+  }
+
+  /**
+   * @dev implements ERC2981 `royaltyInfo()`
+   */
+  function royaltyInfo(uint256, uint256 salePrice) 
+    external 
+    view 
+    returns(address receiver, uint256 royaltyAmount) 
+  {
+    return (
+      payable(address(owner())), 
+      (salePrice * _ROYALTY_PERCENT) / 10000
+    );
+  }
+
+  /**
+   * @dev See {IERC165-supportsInterface}.
+   */
+  function supportsInterface(bytes4 interfaceId)
+    public
+    view
+    virtual
+    override
+    returns(bool)
+  {
+    //support ERC2981
+    if (interfaceId == _INTERFACE_ID_ERC2981) {
+      return true;
+    }
+    return super.supportsInterface(interfaceId);
   }
 
   /**
@@ -113,14 +153,14 @@ contract GryphNamespaces is
    * @dev Assigns a name to a new owner. This would only ever be called  
    * if there was a reported breach of a trademark
    */
-  function assign(uint256 tokenId, address recipient) public onlyOwner {
+  function assign(uint256 tokenId, address recipient) external onlyOwner {
     _transfer(ownerOf(tokenId), recipient, tokenId);
   }
 
   /**
    * @dev Disallows `names` to be minted
    */
-  function blacklist(string[] memory names) public onlyOwner {
+  function blacklist(string[] memory names) external onlyOwner {
     for (uint256 i = 0; i < names.length; i++) {
       blacklisted[names[i]] = true;
     }
@@ -130,7 +170,7 @@ contract GryphNamespaces is
    * @dev Allow admin to mint a name without paying (used for airdrops)
    */
   function mint(address recipient, string memory namespace) 
-    public onlyOwner 
+    external onlyOwner 
   {
     _nameMint(recipient, namespace);
   }
@@ -138,7 +178,7 @@ contract GryphNamespaces is
   /**
    * @dev Allow `names`
    */
-  function whitelist(string[] memory names) public onlyOwner {
+  function whitelist(string[] memory names) external onlyOwner {
     for (uint256 i = 0; i < names.length; i++) {
       blacklisted[names[i]] = false;
     }

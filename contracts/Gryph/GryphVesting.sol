@@ -259,7 +259,7 @@ contract GryphVesting is
   }
   
   /**
-   * @dev Unpauses all token transfers.
+   * @dev Allows everyone to be refunded.
    */
   function refundAll(bool yes) 
     public onlyRole(DEFAULT_ADMIN_ROLE) 
