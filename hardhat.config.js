@@ -36,7 +36,8 @@ module.exports = {
       url: 'http://127.0.0.1:8545',
       accounts: [process.env.BLOCKCHAIN_LOCALHOST_PRIVATE_KEY],
       contracts: {
-        namespaces: process.env.BLOCKCHAIN_LOCALHOST_NAMESPACE_ADDRESS,
+        gns_registry: process.env.BLOCKCHAIN_LOCALHOST_NAMESPACE_REG_ADDRESS,
+        gns_sale: process.env.BLOCKCHAIN_LOCALHOST_NAMESPACE_SALE_ADDRESS,
         token: process.env.BLOCKCHAIN_LOCALHOST_TOKEN_ADDRESS,
         treasury: process.env.BLOCKCHAIN_LOCALHOST_TREASURY_ADDRESS,
         economy: process.env.BLOCKCHAIN_LOCALHOST_ECONOMY_ADDRESS,
@@ -47,7 +48,8 @@ module.exports = {
       url: 'https://rinkeby.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161',
       accounts: [process.env.BLOCKCHAIN_TESTNET_PRIVATE_KEY],
       contracts: {
-        namespaces: process.env.BLOCKCHAIN_TESTNET_NAMESPACE_ADDRESS,
+        gns_registry: process.env.BLOCKCHAIN_TESTNET_NAMESPACE_REG_ADDRESS,
+        gns_sale: process.env.BLOCKCHAIN_TESTNET_NAMESPACE_SALE_ADDRESS,
         token: process.env.BLOCKCHAIN_TESTNET_TOKEN_ADDRESS,
         treasury: process.env.BLOCKCHAIN_TESTNET_TREASURY_ADDRESS,
         economy: process.env.BLOCKCHAIN_TESTNET_ECONOMY_ADDRESS,
@@ -58,6 +60,8 @@ module.exports = {
       url: 'https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161',
       accounts: [process.env.BLOCKCHAIN_MAINNET_PRIVATE_KEY],
       contracts: {
+        gns_registry: process.env.BLOCKCHAIN_MAINNET_NAMESPACE_REG_ADDRESS,
+        gns_sale: process.env.BLOCKCHAIN_MAINNET_NAMESPACE_SALE_ADDRESS,
         namespaces: process.env.BLOCKCHAIN_MAINNET_NAMESPACE_ADDRESS,
         token: process.env.BLOCKCHAIN_MAINNET_TOKEN_ADDRESS,
         treasury: process.env.BLOCKCHAIN_MAINNET_TREASURY_ADDRESS,

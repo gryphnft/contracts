@@ -10,6 +10,8 @@ import "@openzeppelin/contracts/access/AccessControlEnumerable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
+import "./IVesting.sol";
+
 //
 //     ______  _______   ____  ____   _______  ____  ____  
 //   .' ___  ||_   __ \ |_  _||_  _| |_   __ \|_   ||   _| 
@@ -39,7 +41,8 @@ error InvalidWithdraw();
 contract GryphVesting is 
   Pausable, 
   AccessControlEnumerable, 
-  ReentrancyGuard 
+  ReentrancyGuard,
+  IVesting
 {
   //used in release()
   using Address for address;
@@ -114,6 +117,20 @@ contract GryphVesting is
   // ============ Read Methods ============
 
   /**
+   * @dev Returns true if can vest
+   */
+  function canVest(uint256 amount) public view returns(bool) {
+    // if no amount
+    return amount > 0 
+      //if no price
+      && currentTokenPrice > 0 
+      //if no limit
+      && currentTokenLimit > 0 
+      //if the amount exceeds the token limit
+      || (currentTokenAllocated + amount) <= currentTokenLimit;
+  }
+
+  /**
    * @dev Calculates the amount of tokens that are releasable. 
    * Default implementation is a linear vesting curve.
    */
@@ -171,14 +188,7 @@ contract GryphVesting is
   function buy(address beneficiary, uint256 amount) 
     external payable nonReentrant 
   {
-    // if no amount
-    if (amount == 0 
-      //if no price
-      || currentTokenPrice == 0 
-      //if no limit
-      || currentTokenLimit == 0 
-      //if the amount exceeds the token limit
-      || (currentTokenAllocated + amount) > currentTokenLimit
+    if (!canVest(amount)
       //calculate eth amount = 1000 * 0.000005 ether
       || msg.value < ((amount * currentTokenPrice) / 1 ether)
     ) revert InvalidVesting();

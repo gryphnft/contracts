@@ -2,36 +2,26 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
+import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
-import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/IERC721MetadataUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 
-import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/utils/Context.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
-error BalanceQueryZeroAddress();
-error ExistentToken();
-error NonExistentToken();
-error ApprovalToCurrentOwner();
-error ApprovalOwnerIsOperator();
-error NotOwnerOrApproved();
-error NotERC721Receiver();
-error TransferToZeroAddress();
-error InvalidAmount();
-error ERC721ReceiverNotReceived();
-error TransferFromNotOwner();
+error InvalidCall();
 
 abstract contract ERC721 is 
-  ContextUpgradeable, 
-  ERC165Upgradeable, 
-  IERC721Upgradeable, 
-  IERC721MetadataUpgradeable 
+  Context, 
+  ERC165, 
+  IERC721, 
+  IERC721Metadata 
 {
-  using AddressUpgradeable for address;
-  using StringsUpgradeable for uint256;
+  using Address for address;
+  using Strings for uint256;
 
   // ============ Storage ============
 
@@ -52,13 +42,13 @@ abstract contract ERC721 is
 
   modifier isToken(uint256 tokenId) {
     //make sure there is a product
-    if (!_exists(tokenId)) revert NonExistentToken();
+    if (!_exists(tokenId)) revert InvalidCall();
     _;
   }
 
   modifier isNotToken(uint256 tokenId) {
     //make sure there is a product
-    if (_exists(tokenId)) revert ExistentToken();
+    if (_exists(tokenId)) revert InvalidCall();
     _;
   }
 
@@ -70,7 +60,7 @@ abstract contract ERC721 is
   function balanceOf(address owner) 
     public view virtual override returns(uint256) 
   {
-    if (owner == address(0)) revert BalanceQueryZeroAddress();
+    if (owner == address(0)) revert InvalidCall();
     return _balances[owner];
   }
 
@@ -90,12 +80,12 @@ abstract contract ERC721 is
     public 
     view 
     virtual 
-    override(ERC165Upgradeable, IERC165Upgradeable) 
+    override(ERC165, IERC165) 
     returns(bool) 
   {
     return
-      interfaceId == type(IERC721Upgradeable).interfaceId ||
-      interfaceId == type(IERC721Upgradeable).interfaceId ||
+      interfaceId == type(IERC721).interfaceId ||
+      interfaceId == type(IERC721).interfaceId ||
       super.supportsInterface(interfaceId);
   }
   
@@ -113,11 +103,11 @@ abstract contract ERC721 is
    */
   function approve(address to, uint256 tokenId) public virtual override {
     address owner = ERC721.ownerOf(tokenId);
-    if (to == owner) revert ApprovalToCurrentOwner();
+    if (to == owner) revert InvalidCall();
 
     address sender = _msgSender();
     if (sender != owner && !isApprovedForAll(owner, sender)) 
-      revert ApprovalToCurrentOwner();
+      revert InvalidCall();
 
     _approve(to, tokenId, owner);
   }
@@ -188,7 +178,7 @@ abstract contract ERC721 is
     address operator,
     bool approved
   ) internal virtual {
-    if (owner == operator) revert ApprovalOwnerIsOperator();
+    if (owner == operator) revert InvalidCall();
     _operatorApprovals[owner][operator] = approved;
     emit ApprovalForAll(owner, operator, approved);
   }
@@ -228,33 +218,6 @@ abstract contract ERC721 is
   ) public virtual override {
     _safeTransfer(from, to, tokenId, _data);
   }
-  
-  /**
-   * @dev Burns `tokenId`. See {ERC721B-_burn}.
-   *
-   * Requirements:
-   *
-   * - The caller must own `tokenId` or be an approved operator.
-   */
-  function _burn(uint256 tokenId) internal virtual {
-    address owner = ERC721.ownerOf(tokenId);
-
-    if (!_isApprovedOrOwner(_msgSender(), tokenId, owner)) 
-      revert NotOwnerOrApproved();
-
-    _beforeTokenTransfer(owner, address(0), tokenId);
-
-    // Clear approvals
-    _approve(address(0), tokenId, owner);
-
-    unchecked {
-      _owners[tokenId] = address(0);
-      _balances[owner] -= 1;
-      _totalSupply--;
-    }
-
-    emit Transfer(owner, address(0), tokenId);
-  }
 
   /**
    * @dev Internal function to invoke {IERC721Receiver-onERC721Received} 
@@ -267,13 +230,13 @@ abstract contract ERC721 is
     uint256 tokenId,
     bytes memory _data
   ) private returns (bool) {
-    try IERC721ReceiverUpgradeable(to).onERC721Received(
+    try IERC721Receiver(to).onERC721Received(
       _msgSender(), from, tokenId, _data
     ) returns (bytes4 retval) {
-      return retval == IERC721ReceiverUpgradeable.onERC721Received.selector;
+      return retval == IERC721Receiver.onERC721Received.selector;
     } catch (bytes memory reason) {
       if (reason.length == 0) {
-        revert NotERC721Receiver();
+        revert InvalidCall();
       } else {
         assembly {
           revert(add(32, reason), mload(reason))
@@ -314,7 +277,7 @@ abstract contract ERC721 is
     bytes memory _data,
     bool safeCheck
   ) internal virtual isNotToken(tokenId) {
-    if (to == address(0)) revert TransferToZeroAddress();
+    if (to == address(0)) revert InvalidCall();
 
     _beforeTokenTransfer(address(0), to, tokenId);
 
@@ -326,7 +289,7 @@ abstract contract ERC721 is
     if (safeCheck 
       && to.isContract() 
       && !_checkOnERC721Received(address(0), to, tokenId, _data)
-    ) revert ERC721ReceiverNotReceived();
+    ) revert InvalidCall();
 
     emit Transfer(address(0), to, tokenId);
   }
@@ -394,7 +357,7 @@ abstract contract ERC721 is
     if (to.isContract() 
       && !_checkOnERC721Received(from, to, tokenId, _data)
     ) {
-        revert ERC721ReceiverNotReceived();
+        revert InvalidCall();
     }
   }
 
@@ -414,13 +377,13 @@ abstract contract ERC721 is
     address to,
     uint256 tokenId
   ) internal virtual {
-    if (to == address(0)) revert TransferToZeroAddress();
+    if (to == address(0)) revert InvalidCall();
     //get owner
     address owner = ERC721.ownerOf(tokenId);
     //owner should be the `from`
-    if (from != owner) revert TransferFromNotOwner();
+    if (from != owner) revert InvalidCall();
     if (!_isApprovedOrOwner(_msgSender(), tokenId, owner)) 
-      revert NotOwnerOrApproved();
+      revert InvalidCall();
 
     _beforeTokenTransfer(from, to, tokenId);
 

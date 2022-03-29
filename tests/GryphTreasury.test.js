@@ -181,10 +181,14 @@ describe('GryphTreasury Tests', function () {
     const { owner, approver1, approver2, approver3 } = this.signers
   
     await expect(approver1.withContract.approve(1))
+      .to.emit(owner.withContract, 'FundsApprovedFrom')
+      .withArgs(approver1.address, 1)
+    let tx = await owner.withContract.txs(2)
+    await expect(approver2.withContract.approve(1))
       .to.emit(owner.withContract, 'FundsApproved')
       .withArgs(1)
-    let tx = await owner.withContract.txs(1)
-    expect(tx.approvals).to.equal(1)
+    tx = await owner.withContract.txs(1)
+    expect(tx.approvals).to.equal(2)
     expect(tx.withdrawn).to.equal(false)
     expect(await owner.withContract.isApproved(1)).to.equal(true)
 
